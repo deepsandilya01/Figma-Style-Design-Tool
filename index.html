@@ -33,6 +33,97 @@
             </div>
         </nav>
 
+        <section class="section-container">
+            <aside id="left-section">
+                <div class="sidebar-section">
+                    <div class="section-header">
+                        <h3>Pages</h3>
+                        <button class="add-btn">+</button>
+                    </div>
+
+                    <div class="pages-list">
+                        <div class="page-item">📄 Page 1</div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section layers-section">
+                    <div class="section-header">
+                        <h3>Layers</h3>
+                        <div class="layer-controls">
+                            <button class="layer-btn" title="Move Up">↑</button>
+                            <button class="layer-btn" title="Move Down">↓</button>
+                        </div>
+                    </div>
+                    <div class="layers-list" id="layersList">
+                        <div class="layer-item">
+                            <span class="layer-icon">📄</span>
+                            <span class="layer-name">No elements</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <section id="canvas-section">
+                sd
+            </section>
+
+            <aside id="right-section">
+                <div class="sidebar-tabs">
+                    <h2>Design</h2>
+                </div>
+
+                <div class="tab-content" id="designTab">
+                    <div class="sidebar-section">
+                        <div class="section-header">
+                            <h3>Properties</h3>
+                        </div>
+                        <div class="properties-panel" id="propertiesPanel">
+                            <div class="property-group">
+                                <label>Width</label>
+                                <input type="number" id="widthInput" placeholder="Width" min="1">
+                            </div>
+                            <div class="property-group">
+                                <label>Height</label>
+                                <input type="number" id="heightInput" placeholder="Height" min="1">
+                            </div>
+                            <div class="property-group">
+                                <label>Rotation</label>
+                                <input type="number" id="rotationInput" placeholder="0°" min="0" max="360">
+                            </div>
+                            <div class="property-group">
+                                <label>Background Color</label>
+                                <div class="color-input-wrapper">
+                                    <input placeholder="." type="color" id="backgroundColorInput" value="#3b82f6">
+                                    <span class="color-hex">#3b82f6</span>
+                                </div>
+                            </div>
+
+                            <div class="property-group" id="textContentGroup" style="display: none;">
+                            <label>Text Content</label>
+                            <input type=" text" id="textContentInput" placeholder="Enter text">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <div class="section-header">
+                            <h3>Export</h3>
+                        </div>
+                        <div class="export-controls">
+                            <button class="export-btn" id="exportJSONBtn">
+                                <span class="export-icon">📄</span>
+                                Export JSON
+                            </button>
+                            <button class="export-btn" id="exportHTMLBtn">
+                                <span class="export-icon">🌐</span>
+                                Export HTML
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </section>
+
         <footer class="status-bar">
             <div id="status-left">
                 <span class="status-item">
