@@ -64,7 +64,42 @@
             </aside>
 
             <section id="canvas-section">
-                sd
+                <div class="canvas-wrapper">
+                    <div class="canvas" id="canvas">
+                        <div class="canvas-placeholder">
+                            <div class="placeholder-content">
+                                <div class="placeholder-icon">🎯</div>
+                                <p>Click tool to start designing</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bottom-toolbar">
+                    <div class="toolbar-left">
+                        <button class="tool-btn active" data-tool="select" title="Select Tool">
+                            <span class="tool-icon"><i class="ri-cursor-line"></i></span>
+                        </button>
+                        <button class="tool-btn" data-tool="rectangle" title="Rectangle">
+                            <span class="tool-icon"><i class="ri-rectangle-line"></i></span>
+                        </button>
+                        <button class="tool-btn" data-tool="circle" title="Circle">
+                            <span class="tool-icon"><i class="ri-circle-line"></i></span>
+                        </button>
+                        <button class="tool-btn" data-tool="triangle" title="Triangle">
+                            <span class="tool-icon"><i class="ri-triangle-line"></i></span>
+                        </button>
+                        <button class="tool-btn" data-tool="line" title="Line">
+                            <span class="tool-icon"><i class="ri-arrow-right-up-line"></i></span>
+                        </button>
+                        <button class="tool-btn" data-tool="text" title="Text Box">
+                            <span class="tool-icon"><i class="ri-t-box-line"></i></span>
+                        </button>
+                    </div>
+                    <div class="toolbar-right">
+                        <span class="canvas-info">Canvas</span>
+                    </div>
+                </div>
             </section>
 
             <aside id="right-section">
@@ -99,13 +134,13 @@
                             </div>
 
                             <div class="property-group" id="textContentGroup" style="display: none;">
-                            <label>Text Content</label>
-                            <input type=" text" id="textContentInput" placeholder="Enter text">
+                                <label>Text Content</label>
+                                <input type=" text" id="textContentInput" placeholder="Enter text">
                             </div>
                         </div>
                     </div>
 
-                    <div class="sidebar-section">
+                    <div class="sidebar-section exp-section">
                         <div class="section-header">
                             <h3>Export</h3>
                         </div>
