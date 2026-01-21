@@ -11,6 +11,9 @@ $colors: (
   text-muted: #6e7681,
   canvas-bg: white,
   shadow: rgba(0, 0, 0, 0.3),
+  save: rgba(119, 120, 117, 0.832),
+  save-hover: rgba(119, 120, 117, 0.988),
+
 );
 
 $sizes: (
@@ -86,6 +89,7 @@ main {
     height: map-get($sizes, nav-height);
     background-color: map-get($colors, bg-secondary);
     color: map-get($colors, text-primary);
+    border-bottom: 2px solid map-get($colors, border);
 
     padding: map-get($spacing, md);
 
@@ -110,6 +114,7 @@ main {
         gap: map-get($spacing, xs);
 
         .zoom-btn {
+          cursor: pointer;
           height: 1.5rem;
           width: 1.5rem;
           @include flex-center;
@@ -148,6 +153,45 @@ main {
         padding: map-get($spacing, xs);
         border: 0.12rem solid map-get($colors, success);
         border-radius: map-get($border-radius, circle);
+      }
+    }
+  }
+
+  .status-bar {
+    @include flex-between;
+    margin-bottom: 0%;
+    padding: map-get($spacing, sm);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+
+    background-color: map-get($colors, bg-secondary);
+    color: map-get($colors, text-primary);
+    border-top: 2px solid map-get($colors, border);
+
+    #status-left {
+      @include flex-center;
+      padding-left: map-get($spacing, xs);
+      gap: map-get($spacing, xl);
+      font-size: 1rem;
+      color: map-get($colors, text-secondary);
+    }
+
+    #status-right {
+      padding-right: map-get($spacing, xs);
+
+      #status-btn {
+        @include button-base;
+        padding: map-get($spacing, sm) map-get($spacing, xl);
+        border: none;
+        border-radius: map-get($border-radius, lg);
+        background-color: map-get($colors, save);
+
+        &:hover {
+          background-color: map-get($colors, save-hover);
+          transform: scale(0.9);
+        }
       }
     }
   }
