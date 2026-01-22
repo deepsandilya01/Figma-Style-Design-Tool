@@ -16,6 +16,7 @@ main {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 main .navbar {
   height: 3rem;
@@ -109,7 +110,7 @@ main .navbar #nav-right .user-menu {
   border-radius: 50%;
 }
 main .section-container {
-  height: 100%;
+  height: calc(100vh - 3rem - 40px);
   width: 100%;
   display: flex;
 }
@@ -118,117 +119,186 @@ main .section-container #left-section {
   background-color: #0d1117;
   color: #f0f6fc;
   border-right: 2px solid #30363d;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 main .section-container #left-section .sidebar-section {
-  padding: 0.5rem;
-  border-bottom: 1px solid #30363d;
-  height: 40%;
+  height: 50%;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+main .section-container #left-section .sidebar-section.page-section {
+  border-bottom: 2px solid #30363d;
+}
+main .section-container #left-section .sidebar-section.layers-section {
+  border-bottom: none;
 }
 main .section-container #left-section .sidebar-section .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
   padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+  flex-shrink: 0;
 }
 main .section-container #left-section .sidebar-section .section-header h3 {
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #f0f6fc;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 main .section-container #left-section .sidebar-section .section-header .add-btn {
   cursor: pointer;
-  width: 1.25rem;
-  line-height: 1;
-  height: 1.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
-  background: transparent;
+  background: #21262d;
   border: 1px solid #30363d;
   color: #7d8590;
-  border-radius: 0.25rem;
+  border-radius: 0.375rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: bold;
+  transition: all 0.2s ease;
 }
 main .section-container #left-section .sidebar-section .section-header .add-btn:focus {
   outline: none;
 }
 main .section-container #left-section .sidebar-section .section-header .add-btn:hover {
-  background: #21262d;
-  color: #f0f6fc;
-  transform: scale(0.8);
-}
-main .section-container #left-section .sidebar-section .pages-list {
   background: #58a6ff;
-  padding: 0.25rem;
+  color: white;
+  border-color: #58a6ff;
+  transform: scale(1.05);
+}
+main .section-container #left-section .sidebar-section .section-header .layer-controls {
+  display: flex;
+  gap: 0.25rem;
+}
+main .section-container #left-section .sidebar-section .section-header .layer-controls .layer-btn {
   cursor: pointer;
+  width: 1.5rem;
+  height: 1.5rem;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
+  background: #21262d;
   border: 1px solid #30363d;
-  border-radius: 0.25rem;
+  color: #7d8590;
+  border-radius: 0.375rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
-}
-main .section-container #left-section .sidebar-section .pages-list:focus {
-  outline: none;
-}
-main .section-container #left-section .sidebar-section .pages-list:hover {
-  background: #21262d;
-  color: #f0f6fc;
-  transform: scale(0.95);
-}
-main .section-container #left-section .layers-section {
-  border: none;
-}
-main .section-container #left-section .layers-section .section-header .layer-controls .layer-btn {
-  cursor: pointer;
-  width: 1.25rem;
-  line-height: 1;
-  height: 1.25rem;
-  border: none;
-  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: bold;
   transition: all 0.2s ease;
-  font-family: inherit;
-  background: transparent;
-  border: 1px solid #30363d;
-  color: #7d8590;
-  border-radius: 0.25rem;
 }
-main .section-container #left-section .layers-section .section-header .layer-controls .layer-btn:focus {
+main .section-container #left-section .sidebar-section .section-header .layer-controls .layer-btn:focus {
   outline: none;
 }
-main .section-container #left-section .layers-section .section-header .layer-controls .layer-btn:hover {
+main .section-container #left-section .sidebar-section .section-header .layer-controls .layer-btn:hover {
+  background: #58a6ff;
+  color: white;
+  border-color: #58a6ff;
+  transform: scale(1.05);
+}
+main .section-container #left-section .sidebar-section .pages-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(100% - 60px);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+main .section-container #left-section .sidebar-section .pages-list::-webkit-scrollbar {
+  display: none;
+}
+main .section-container #left-section .sidebar-section .pages-list .page-item {
+  background: transparent;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-bottom: 0.5rem;
+}
+main .section-container #left-section .sidebar-section .pages-list .page-item:last-child {
+  margin-bottom: 0;
+}
+main .section-container #left-section .sidebar-section .pages-list .page-item:hover {
   background: #21262d;
-  color: #f0f6fc;
-  transform: scale(0.8);
+  border-color: #30363d;
+}
+main .section-container #left-section .sidebar-section .layers-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(100% - 60px);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+main .section-container #left-section .sidebar-section .layers-list::-webkit-scrollbar {
+  display: none;
+}
+main .section-container #left-section .sidebar-section .layers-list .layer-item {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  transform-origin: center;
+}
+main .section-container #left-section .sidebar-section .layers-list .layer-item:last-child {
+  margin-bottom: 0;
+}
+main .section-container #left-section .sidebar-section .layers-list .layer-item:hover {
+  background: #21262d;
+  border-color: #30363d;
+}
+main .section-container #left-section .sidebar-section .layers-list .layer-item .layer-icon {
+  flex-shrink: 0;
+}
+main .section-container #left-section .sidebar-section .layers-list .layer-item .layer-name {
+  flex: 1;
 }
 main .section-container #canvas-section {
   flex: 1;
-  background: #1e1e1e;
+  background: #2c2c2c;
   display: flex;
   flex-direction: column;
   position: relative;
   height: 100%;
   overflow: hidden;
+  min-height: 0;
 }
 main .section-container #canvas-section .canvas-wrapper {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1e1e1e;
+  background: #2c2c2c;
   position: relative;
   width: 100%;
   height: 100%;
-  padding-top: 10px;
+  padding: 0;
+  overflow: hidden;
 }
 main .section-container #canvas-section .canvas-wrapper::before {
   content: "";
@@ -237,21 +307,31 @@ main .section-container #canvas-section .canvas-wrapper::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+  background: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1px, transparent 0);
   background-size: 20px 20px;
   pointer-events: none;
   z-index: 1;
 }
 main .section-container #canvas-section .canvas-wrapper .canvas {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: #f5f5f5;
+  border-radius: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
   position: relative;
-  width: 800px;
-  height: 90%;
-  border: 1px solid #e1e5e9;
+  width: 100%;
+  height: 100%;
   z-index: 10;
-  margin-top: -50px;
+  overflow: hidden;
+}
+main .section-container #canvas-section .canvas-wrapper .canvas::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+  z-index: 1001;
 }
 main .section-container #canvas-section .canvas-wrapper .canvas::before {
   content: "";
@@ -260,7 +340,7 @@ main .section-container #canvas-section .canvas-wrapper .canvas::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px), linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px), linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
   background-size: 20px 20px;
   pointer-events: none;
   z-index: 0;
@@ -296,7 +376,7 @@ main .section-container #canvas-section .canvas-wrapper .canvas .canvas-placehol
   color: #8c8c8c;
 }
 main .section-container #canvas-section .bottom-toolbar {
-  position: absolute;
+  position: fixed;
   bottom: 8.2%;
   left: 50%;
   transform: translateX(-50%);
@@ -397,10 +477,12 @@ main .section-container #right-section .tab-content .sidebar-section .properties
 main .section-container #right-section .tab-content .sidebar-section .properties-panel .property-group input {
   width: clamp(3.5rem, 15vw, 19rem);
   height: 30px;
+  color: #f0f6fc;
   background: #21262d;
   border-radius: 0.5rem;
   border: 1px solid #30363d;
   padding: 1px 5px;
+  transition: all 0.5s ease;
 }
 main .section-container #right-section .tab-content .sidebar-section .properties-panel .property-group input:hover {
   border: 1px solid #58a6ff;
@@ -429,9 +511,11 @@ main .section-container #right-section .tab-content .sidebar-section .export-con
   border-radius: 0.5rem;
   border: 1px solid #30363d;
   margin-bottom: 1.25rem;
+  transition: all 0.2s ease;
 }
 main .section-container #right-section .tab-content .sidebar-section .export-controls .export-btn:hover {
   border: 1px solid #58a6ff;
+  transform: scale(1.1);
 }
 main .section-container #right-section .tab-content .sidebar-section:has(.export-controls) {
   border-bottom: none;

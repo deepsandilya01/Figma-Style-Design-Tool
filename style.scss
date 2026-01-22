@@ -87,6 +87,7 @@ main {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 
   .navbar {
     height: map-get($sizes, nav-height);
@@ -176,7 +177,7 @@ main {
   }
 
   .section-container {
-    height: 100%;
+    height: calc(100vh - #{map-get($sizes, nav-height)} - 40px);
     width: 100%;
     display: flex;
 
@@ -185,123 +186,191 @@ main {
       background-color: map-get($colors, bg-primary);
       color: map-get($colors, text-primary);
       border-right: 2px solid map-get($colors, border);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
 
       .sidebar-section {
-        padding: map-get($spacing, sm);
-        border-bottom: 1px solid map-get($colors, border);
-        height: 40%;
+        height: 50%;
+        display: flex;
+        flex-direction: column;
+        padding: map-get($spacing, lg);
+
+        &.page-section {
+          border-bottom: 2px solid map-get($colors, border);
+        }
+
+        &.layers-section {
+          border-bottom: none;
+        }
 
         .section-header {
           @include flex-between;
-          margin-bottom: map-get($spacing, md);
+          margin-bottom: map-get($spacing, lg);
           padding-bottom: map-get($spacing, sm);
+          border-bottom: 1px solid rgba(map-get($colors, border), 0.5);
+          flex-shrink: 0;
+
           h3 {
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             font-weight: 600;
             color: map-get($colors, text-primary);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
           }
+
           .add-btn {
             cursor: pointer;
-            width: 1.25rem;
-            line-height: 1;
-            height: 1.25rem;
+            width: 1.5rem;
+            height: 1.5rem;
             @include button-base;
-            background: transparent;
+            background: map-get($colors, bg-tertiary);
             border: 1px solid map-get($colors, border);
             color: map-get($colors, text-secondary);
-            border-radius: map-get($border-radius, sm);
+            border-radius: map-get($border-radius, md);
             @include flex-center;
-            font-size: 0.75rem;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.2s ease;
 
             &:hover {
-              background: map-get($colors, bg-tertiary);
-              color: map-get($colors, text-primary);
-              transform: scale(0.8);
+              background: map-get($colors, primary);
+              color: white;
+              border-color: map-get($colors, primary);
+              transform: scale(1.05);
             }
           }
-        }
 
-        .pages-list {
-          background: map-get($colors, primary);
-          padding: map-get($spacing, xs);
-          cursor: pointer;
-          @include button-base;
-          border: 1px solid map-get($colors, border);
-          border-radius: map-get($border-radius, sm);
-          @include flex-center;
-          font-size: 1rem;
-
-          &:hover {
-            background: map-get($colors, bg-tertiary);
-            color: map-get($colors, text-primary);
-            transform: scale(0.95);
-          }
-        }
-      }
-
-      .layers-section {
-        border: none;
-        .section-header {
           .layer-controls {
+            display: flex;
+            gap: map-get($spacing, xs);
+
             .layer-btn {
               cursor: pointer;
-              width: 1.25rem;
-              line-height: 1;
-              height: 1.25rem;
+              width: 1.5rem;
+              height: 1.5rem;
               @include button-base;
-              background: transparent;
+              background: map-get($colors, bg-tertiary);
               border: 1px solid map-get($colors, border);
               color: map-get($colors, text-secondary);
-              border-radius: map-get($border-radius, sm);
+              border-radius: map-get($border-radius, md);
+              @include flex-center;
+              font-size: 0.8rem;
+              font-weight: bold;
+              transition: all 0.2s ease;
 
               &:hover {
-                background: map-get($colors, bg-tertiary);
-                color: map-get($colors, text-primary);
-                transform: scale(0.8);
+                background: map-get($colors, primary);
+                color: white;
+                border-color: map-get($colors, primary);
+                transform: scale(1.05);
               }
             }
           }
         }
 
-        // .layers-list{
-        //   background: map-get($colors, primary);
-        //   padding: map-get($spacing, xs);
-        //   cursor: pointer;
-        //   @include button-base;
-        //   border: 1px solid map-get($colors, border);
-        //   border-radius: map-get($border-radius, sm);
-        //   @include flex-center;
-        //   font-size: 1rem;
+        .pages-list {
+          flex: 1;
+          overflow-y: auto;
+          overflow-x: hidden;
+          max-height: calc(100% - 60px);
 
-        //   &:hover {
-        //     background: map-get($colors, bg-tertiary);
-        //     color: map-get($colors, text-primary);
-        //     transform: scale(0.95);
-        //   }
-        // }
+          &::-webkit-scrollbar {
+            display: none;
+          }
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+
+          .page-item {
+            background: transparent;
+            padding: map-get($spacing, sm) map-get($spacing, md);
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: map-get($border-radius, md);
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-bottom: map-get($spacing, sm);
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+
+            &:hover {
+              background: map-get($colors, bg-tertiary);
+              border-color: map-get($colors, border);
+            }
+          }
+        }
+
+        .layers-list {
+          flex: 1;
+          overflow-y: auto;
+          overflow-x: hidden;
+          max-height: calc(100% - 60px);
+
+          &::-webkit-scrollbar {
+            display: none;
+          }
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+
+          .layer-item {
+            padding: map-get($spacing, sm) map-get($spacing, md);
+            border-radius: map-get($border-radius, md);
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            margin-bottom: map-get($spacing, sm);
+            display: flex;
+            align-items: center;
+            gap: map-get($spacing, sm);
+            flex-shrink: 0;
+            transform-origin: center;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+
+            &:hover {
+              background: map-get($colors, bg-tertiary);
+              border-color: map-get($colors, border);
+            }
+
+            .layer-icon {
+              flex-shrink: 0;
+            }
+
+            .layer-name {
+              flex: 1;
+            }
+          }
+        }
       }
     }
 
     #canvas-section {
       flex: 1;
-      background: #1e1e1e;
+      background: #2c2c2c;
       display: flex;
       flex-direction: column;
       position: relative;
       height: 100%;
       overflow: hidden;
+      min-height: 0;
 
       .canvas-wrapper {
         flex: 1;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #1e1e1e;
+        background: #2c2c2c;
         position: relative;
         width: 100%;
         height: 100%;
-        padding-top: 10px;
-
+        padding: 0;
+        overflow: hidden;
         &::before {
           content: "";
           position: absolute;
@@ -311,7 +380,7 @@ main {
           height: 100%;
           background: radial-gradient(
             circle at 1px 1px,
-            rgba(255, 255, 255, 0.05) 1px,
+            rgba(255, 255, 255, 0.08) 1px,
             transparent 0
           );
           background-size: 20px 20px;
@@ -320,17 +389,26 @@ main {
         }
 
         .canvas {
-          background: white;
-          border-radius: 8px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          background: #f5f5f5;
+          border-radius: 0;
+          box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
           position: relative;
-          width: 800px;
-          height: 90%;
-
-          border: 1px solid #e1e5e9;
+          width: 100%;
+          height: 100%;
           z-index: 10;
-          margin-top: -50px;
+          overflow: hidden;
 
+          &::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+            z-index: 1001;
+          }
 
           &::before {
             content: "";
@@ -340,8 +418,8 @@ main {
             right: 0;
             bottom: 0;
             background:
-              linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-              linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+              linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+              linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
             background-size: 20px 20px;
             pointer-events: none;
             z-index: 0;
@@ -383,7 +461,7 @@ main {
       }
 
       .bottom-toolbar {
-        position: absolute;
+        position: fixed;
         bottom: 8.2%;
         left: 50%;
         transform: translateX(-50%);
@@ -481,10 +559,13 @@ main {
               input {
                 width: clamp(3.5rem, 15vw, 19rem);
                 height: 30px;
+                color: map-get($colors, text-primary);
+
                 background: map-get($colors, bg-tertiary);
                 border-radius: map-get($border-radius, lg);
                 border: 1px solid map-get($colors, border);
                 padding: 1px 5px;
+                transition: all 0.5s ease;
               }
 
               input:hover {
@@ -516,8 +597,10 @@ main {
               border: 1px solid map-get($colors, border);
               margin-bottom: map-get($spacing, xl);
 
+              transition: all 0.2s ease;
               &:hover {
                 border: 1px solid map-get($colors, primary);
+                transform: scale(1.1);
               }
             }
           }
