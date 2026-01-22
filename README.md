@@ -9,8 +9,8 @@ This tool allows users to visually create, edit, and manage design elements on a
 
 ## 🔗 Live Demo & Source Code
 
-- **GitHub Repository:** [ADD YOUR GITHUB LINK HERE]
-- **Live Project (Vercel):** [ADD YOUR LIVE LINK HERE]
+- **GitHub Repository:**(https://github.com/deepsandilya01/Figma-Style-Design-Tool)
+- **Live Project (Vercel):** (https://figma-style-design-tool-two.vercel.app/)
 
 ---
 
@@ -237,3 +237,4 @@ It focuses on:
 - Strong UI/UX experience
 
 Perfect example of advanced frontend fundamentals.
+
