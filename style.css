@@ -53,8 +53,11 @@ main .navbar #nav-center .zoom-controls .zoom-btn {
   height: 1.5rem;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease-out;
   font-family: inherit;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: transform, background-color;
   background: transparent;
   border: 1px solid #30363d;
   color: #f0f6fc;
@@ -68,6 +71,9 @@ main .navbar #nav-center .zoom-controls .zoom-btn {
 }
 main .navbar #nav-center .zoom-controls .zoom-btn:focus {
   outline: none;
+}
+main .navbar #nav-center .zoom-controls .zoom-btn:active {
+  transform: translateZ(0) scale(0.98);
 }
 main .navbar #nav-center .zoom-controls .zoom-btn:hover {
   color: #f0f6fc;
@@ -90,8 +96,11 @@ main .navbar #nav-right {
 main .navbar #nav-right .share-btn {
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease-out;
   font-family: inherit;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: transform, background-color;
   padding: 0.5rem 1.25rem;
   border: none;
   border-radius: 0.5rem;
@@ -99,6 +108,9 @@ main .navbar #nav-right .share-btn {
 }
 main .navbar #nav-right .share-btn:focus {
   outline: none;
+}
+main .navbar #nav-right .share-btn:active {
+  transform: translateZ(0) scale(0.98);
 }
 main .navbar #nav-right .share-btn:hover {
   background-color: #2ea043;
@@ -157,8 +169,11 @@ main .section-container #left-section .sidebar-section .section-header .add-btn 
   height: 1.5rem;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease-out;
   font-family: inherit;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: transform, background-color;
   background: #21262d;
   border: 1px solid #30363d;
   color: #7d8590;
@@ -172,6 +187,9 @@ main .section-container #left-section .sidebar-section .section-header .add-btn 
 }
 main .section-container #left-section .sidebar-section .section-header .add-btn:focus {
   outline: none;
+}
+main .section-container #left-section .sidebar-section .section-header .add-btn:active {
+  transform: translateZ(0) scale(0.98);
 }
 main .section-container #left-section .sidebar-section .section-header .add-btn:hover {
   background: #58a6ff;
@@ -189,8 +207,11 @@ main .section-container #left-section .sidebar-section .section-header .layer-co
   height: 1.5rem;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease-out;
   font-family: inherit;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: transform, background-color;
   background: #21262d;
   border: 1px solid #30363d;
   color: #7d8590;
@@ -204,6 +225,9 @@ main .section-container #left-section .sidebar-section .section-header .layer-co
 }
 main .section-container #left-section .sidebar-section .section-header .layer-controls .layer-btn:focus {
   outline: none;
+}
+main .section-container #left-section .sidebar-section .section-header .layer-controls .layer-btn:active {
+  transform: translateZ(0) scale(0.98);
 }
 main .section-container #left-section .sidebar-section .section-header .layer-controls .layer-btn:hover {
   background: #58a6ff;
@@ -230,8 +254,15 @@ main .section-container #left-section .sidebar-section .pages-list .page-item {
   border-radius: 0.375rem;
   font-size: 0.85rem;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease-out;
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #f0f6fc;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: background-color, color;
 }
 main .section-container #left-section .sidebar-section .pages-list .page-item:last-child {
   margin-bottom: 0;
@@ -239,8 +270,43 @@ main .section-container #left-section .sidebar-section .pages-list .page-item:la
 main .section-container #left-section .sidebar-section .pages-list .page-item:hover {
   background: #21262d;
   border-color: #30363d;
+  transform: translateZ(0) scale(1.02);
 }
-main .section-container #left-section .sidebar-section .layers-list {
+main .section-container #left-section .sidebar-section .pages-list .page-item.active {
+  background: #58a6ff;
+  color: white;
+  transform: translateZ(0) scale(1.01);
+}
+main .section-container #left-section .sidebar-section .pages-list .page-item.active .page-delete-btn {
+  color: white;
+}
+main .section-container #left-section .sidebar-section .pages-list .page-item .page-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  transition: inherit;
+}
+main .section-container #left-section .sidebar-section .pages-list .page-item .page-delete-btn {
+  background: transparent;
+  border: none;
+  color: #7d8590;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: all 0.15s ease-out;
+  transform: translateZ(0);
+}
+main .section-container #left-section .sidebar-section .pages-list .page-item .page-delete-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateZ(0) scale(1.1);
+}
+main .section-container #left-section .sidebar-section .pages-list .page-item .page-delete-btn:active {
+  transform: translateZ(0) scale(0.95);
+}
+main .section-container #left-section .layers-list {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -248,10 +314,10 @@ main .section-container #left-section .sidebar-section .layers-list {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-main .section-container #left-section .sidebar-section .layers-list::-webkit-scrollbar {
+main .section-container #left-section .layers-list::-webkit-scrollbar {
   display: none;
 }
-main .section-container #left-section .sidebar-section .layers-list .layer-item {
+main .section-container #left-section .layers-list .layer-item {
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
   font-size: 0.85rem;
@@ -265,20 +331,20 @@ main .section-container #left-section .sidebar-section .layers-list .layer-item 
   flex-shrink: 0;
   transform-origin: center;
 }
-main .section-container #left-section .sidebar-section .layers-list .layer-item:last-child {
+main .section-container #left-section .layers-list .layer-item:last-child {
   margin-bottom: 0;
 }
-main .section-container #left-section .sidebar-section .layers-list .layer-item:hover {
+main .section-container #left-section .layers-list .layer-item:hover {
   background: #21262d;
   border-color: #30363d;
 }
-main .section-container #left-section .sidebar-section .layers-list .layer-item .layer-icon {
+main .section-container #left-section .layers-list .layer-item .layer-icon {
   flex-shrink: 0;
 }
-main .section-container #left-section .sidebar-section .layers-list .layer-item .layer-name {
+main .section-container #left-section .layers-list .layer-item .layer-name {
   flex: 1;
 }
-main .section-container #canvas-section {
+main #canvas-section {
   flex: 1;
   background: #2c2c2c;
   display: flex;
@@ -288,7 +354,7 @@ main .section-container #canvas-section {
   overflow: hidden;
   min-height: 0;
 }
-main .section-container #canvas-section .canvas-wrapper {
+main #canvas-section .canvas-wrapper {
   flex: 1;
   display: flex;
   align-items: center;
@@ -300,7 +366,7 @@ main .section-container #canvas-section .canvas-wrapper {
   padding: 0;
   overflow: hidden;
 }
-main .section-container #canvas-section .canvas-wrapper::before {
+main #canvas-section .canvas-wrapper::before {
   content: "";
   position: absolute;
   top: 0;
@@ -312,7 +378,7 @@ main .section-container #canvas-section .canvas-wrapper::before {
   pointer-events: none;
   z-index: 1;
 }
-main .section-container #canvas-section .canvas-wrapper .canvas {
+main #canvas-section .canvas-wrapper .canvas {
   background: #f5f5f5;
   border-radius: 0;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
@@ -322,7 +388,7 @@ main .section-container #canvas-section .canvas-wrapper .canvas {
   z-index: 10;
   overflow: hidden;
 }
-main .section-container #canvas-section .canvas-wrapper .canvas::after {
+main #canvas-section .canvas-wrapper .canvas::after {
   content: "";
   position: absolute;
   top: 0;
@@ -333,7 +399,7 @@ main .section-container #canvas-section .canvas-wrapper .canvas::after {
   pointer-events: none;
   z-index: 1001;
 }
-main .section-container #canvas-section .canvas-wrapper .canvas::before {
+main #canvas-section .canvas-wrapper .canvas::before {
   content: "";
   position: absolute;
   top: 0;
@@ -345,14 +411,14 @@ main .section-container #canvas-section .canvas-wrapper .canvas::before {
   pointer-events: none;
   z-index: 0;
 }
-main .section-container #canvas-section .canvas-wrapper .canvas .canvas-content {
+main #canvas-section .canvas-wrapper .canvas .canvas-content {
   min-width: 100%;
   min-height: 100%;
   width: auto;
   height: auto;
   position: relative;
 }
-main .section-container #canvas-section .canvas-wrapper .canvas .canvas-placeholder {
+main #canvas-section .canvas-wrapper .canvas .canvas-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -361,21 +427,21 @@ main .section-container #canvas-section .canvas-wrapper .canvas .canvas-placehol
   color: #8c8c8c;
   position: relative;
 }
-main .section-container #canvas-section .canvas-wrapper .canvas .canvas-placeholder .placeholder-content {
+main #canvas-section .canvas-wrapper .canvas .canvas-placeholder .placeholder-content {
   text-align: center;
 }
-main .section-container #canvas-section .canvas-wrapper .canvas .canvas-placeholder .placeholder-content .placeholder-icon {
+main #canvas-section .canvas-wrapper .canvas .canvas-placeholder .placeholder-content .placeholder-icon {
   font-size: 2.5rem;
   margin-bottom: 0.75rem;
   opacity: 0.5;
 }
-main .section-container #canvas-section .canvas-wrapper .canvas .canvas-placeholder .placeholder-content p {
+main #canvas-section .canvas-wrapper .canvas .canvas-placeholder .placeholder-content p {
   font-size: 0.9rem;
   font-weight: 400;
   opacity: 0.7;
   color: #8c8c8c;
 }
-main .section-container #canvas-section .bottom-toolbar {
+main #canvas-section .bottom-toolbar {
   position: fixed;
   bottom: 8.2%;
   left: 50%;
@@ -390,18 +456,22 @@ main .section-container #canvas-section .bottom-toolbar {
   padding: 8px 16px;
   color: white;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  will-change: transform;
 }
-main .section-container #canvas-section .bottom-toolbar .toolbar-left {
+main #canvas-section .bottom-toolbar .toolbar-left {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
 }
-main .section-container #canvas-section .bottom-toolbar .toolbar-left .tool-btn {
+main #canvas-section .bottom-toolbar .toolbar-left .tool-btn {
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease-out;
   font-family: inherit;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: transform, background-color;
   width: 32px;
   height: 32px;
   background: transparent;
@@ -412,58 +482,68 @@ main .section-container #canvas-section .bottom-toolbar .toolbar-left .tool-btn 
   align-items: center;
   justify-content: center;
   font-size: 14px;
+  transition: all 0.15s ease-out;
+  will-change: background-color, color;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
-main .section-container #canvas-section .bottom-toolbar .toolbar-left .tool-btn:focus {
+main #canvas-section .bottom-toolbar .toolbar-left .tool-btn:focus {
   outline: none;
 }
-main .section-container #canvas-section .bottom-toolbar .toolbar-left .tool-btn:hover {
+main #canvas-section .bottom-toolbar .toolbar-left .tool-btn:active {
+  transform: translateZ(0) scale(0.98);
+}
+main #canvas-section .bottom-toolbar .toolbar-left .tool-btn:hover {
   background: #3c3c3c;
   color: white;
+  transform: translateZ(0) scale(1.05);
 }
-main .section-container #canvas-section .bottom-toolbar .toolbar-left .tool-btn.active {
+main #canvas-section .bottom-toolbar .toolbar-left .tool-btn.active {
   background: #0d99ff;
   color: white;
+  transform: translateZ(0) scale(1.02);
 }
-main .section-container #canvas-section .bottom-toolbar .toolbar-left .tool-btn .tool-icon {
+main #canvas-section .bottom-toolbar .toolbar-left .tool-btn .tool-icon {
   font-size: 14px;
   font-weight: 500;
+  transition: inherit;
 }
-main .section-container #canvas-section .bottom-toolbar .toolbar-right .canvas-info {
+main #canvas-section .bottom-toolbar .toolbar-right .canvas-info {
   font-size: 12px;
   color: #b3b3b3;
   font-weight: 400;
   margin-left: 12px;
 }
-main .section-container #right-section {
+main #right-section {
   width: 20vw;
   background-color: #0d1117;
   color: #f0f6fc;
   border-left: 2px solid #30363d;
   overflow: hidden;
 }
-main .section-container #right-section .sidebar-tabs {
+main #right-section .sidebar-tabs {
   display: flex;
   align-items: center;
   justify-content: center;
   border-bottom: 2.5px solid rgba(137, 43, 226, 0.504);
   padding-bottom: 0.25rem;
 }
-main .section-container #right-section .sidebar-tabs h2 {
+main #right-section .sidebar-tabs h2 {
   font-size: 1.5rem;
   font-weight: 500;
 }
-main .section-container #right-section .tab-content .sidebar-section {
+main #right-section .tab-content .sidebar-section {
   padding: 0.5rem;
   border-bottom: 1px solid #30363d;
 }
-main .section-container #right-section .tab-content .sidebar-section .section-header {
+main #right-section .tab-content .sidebar-section .section-header {
   padding-bottom: 0.5rem;
 }
-main .section-container #right-section .tab-content .sidebar-section .section-header h3 {
+main #right-section .tab-content .sidebar-section .section-header h3 {
   font-weight: 400;
   font-size: 1rem;
 }
-main .section-container #right-section .tab-content .sidebar-section .properties-panel .property-group {
+main #right-section .tab-content .sidebar-section .properties-panel .property-group {
   padding-bottom: 1.25rem;
   display: flex;
   align-items: center;
@@ -471,10 +551,10 @@ main .section-container #right-section .tab-content .sidebar-section .properties
   flex-direction: column;
   gap: 2px;
 }
-main .section-container #right-section .tab-content .sidebar-section .properties-panel .property-group label {
+main #right-section .tab-content .sidebar-section .properties-panel .property-group label {
   font-size: 0.8rem;
 }
-main .section-container #right-section .tab-content .sidebar-section .properties-panel .property-group input {
+main #right-section .tab-content .sidebar-section .properties-panel .property-group input {
   width: clamp(3.5rem, 15vw, 19rem);
   height: 30px;
   color: #f0f6fc;
@@ -484,25 +564,25 @@ main .section-container #right-section .tab-content .sidebar-section .properties
   padding: 1px 5px;
   transition: all 0.5s ease;
 }
-main .section-container #right-section .tab-content .sidebar-section .properties-panel .property-group input:hover {
+main #right-section .tab-content .sidebar-section .properties-panel .property-group input:hover {
   border: 1px solid #58a6ff;
 }
-main .section-container #right-section .tab-content .sidebar-section .properties-panel .property-group input[type=color] {
+main #right-section .tab-content .sidebar-section .properties-panel .property-group input[type=color] {
   cursor: pointer;
 }
-main .section-container #right-section .tab-content .sidebar-section .properties-panel .property-group .color-input-wrapper {
+main #right-section .tab-content .sidebar-section .properties-panel .property-group .color-input-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
 }
-main .section-container #right-section .tab-content .sidebar-section .export-controls {
+main #right-section .tab-content .sidebar-section .export-controls {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
 }
-main .section-container #right-section .tab-content .sidebar-section .export-controls .export-btn {
+main #right-section .tab-content .sidebar-section .export-controls .export-btn {
   cursor: pointer;
   width: clamp(3.5rem, 15vw, 19rem);
   height: 30px;
@@ -513,17 +593,18 @@ main .section-container #right-section .tab-content .sidebar-section .export-con
   margin-bottom: 1.25rem;
   transition: all 0.2s ease;
 }
-main .section-container #right-section .tab-content .sidebar-section .export-controls .export-btn:hover {
+main #right-section .tab-content .sidebar-section .export-controls .export-btn:hover {
   border: 1px solid #58a6ff;
   transform: scale(1.1);
 }
-main .section-container #right-section .tab-content .sidebar-section:has(.export-controls) {
+main #right-section .tab-content .sidebar-section:has(.export-controls) {
   border-bottom: none;
 }
-main .section-container #right-section .tab-content .sidebar-section:last-child {
+main #right-section .tab-content .sidebar-section:last-child {
   border-bottom: none;
 }
-main .status-bar {
+
+.status-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -538,7 +619,7 @@ main .status-bar {
   color: #f0f6fc;
   border-top: 2px solid #30363d;
 }
-main .status-bar #status-left {
+.status-bar #status-left {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -547,23 +628,50 @@ main .status-bar #status-left {
   font-size: 0.8rem;
   color: #7d8590;
 }
-main .status-bar #status-right {
+.status-bar .devinfo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.status-bar .devinfo #tag a {
+  font-size: 18px;
+  opacity: 0.7;
+  color: white;
+  font-size: 20px;
+  margin: 0 8px;
+  text-decoration: none;
+}
+.status-bar .devinfo #tag a:hover {
+  color: #58a6ff;
+}
+.status-bar .devinfo .name h5 {
+  font-weight: 400 !important;
+  opacity: 0.9;
+}
+.status-bar #status-right {
   padding-right: 0.25rem;
 }
-main .status-bar #status-right #status-btn {
+.status-bar #status-right #status-btn {
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease-out;
   font-family: inherit;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: transform, background-color;
   padding: 0.5rem 1.25rem;
   border: none;
   border-radius: 0.5rem;
   background-color: rgba(119, 120, 117, 0.832);
 }
-main .status-bar #status-right #status-btn:focus {
+.status-bar #status-right #status-btn:focus {
   outline: none;
 }
-main .status-bar #status-right #status-btn:hover {
+.status-bar #status-right #status-btn:active {
+  transform: translateZ(0) scale(0.98);
+}
+.status-bar #status-right #status-btn:hover {
   background-color: rgba(119, 120, 117, 0.988);
   transform: scale(0.9);
 }/*# sourceMappingURL=style.css.map */

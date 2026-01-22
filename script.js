@@ -51,16 +51,20 @@
   };
 
   const Utils = {
+
     clamp: function (value, min, max) {
       return Math.max(min, Math.min(value, max));
     },
+
     generateElementId: function () {
       return `element_${++AppState.elementCounter}`;
     },
+
     normalizeAngle: function (angle) {
       angle = angle % 360;
       return angle < 0 ? angle + 360 : angle;
     },
+
     getAngleFromCenter: function (e, element) {
       const canvas = document.getElementById("canvas");
       if (!canvas) return 0;
@@ -71,6 +75,7 @@
       const mouseY = e.clientY - canvasRect.top;
       return Math.atan2(mouseY - centerY, mouseX - centerX) * (180 / Math.PI);
     },
+
     getCanvasMousePosition: function (e) {
       const canvas = document.getElementById("canvas");
       if (!canvas) return { x: 0, y: 0 };
@@ -83,6 +88,7 @@
   };
 
   const PageManager = {
+
     addNewPage: function () {
       const newPageNumber = AppState.pages.length + 1;
       const newPage = {
@@ -95,6 +101,7 @@
       this.updatePagesPanel();
       this.switchToPage(AppState.pages.length - 1);
     },
+
     deletePage: function (pageIndex) {
       if (AppState.pages.length <= 1) {
         alert("Cannot delete the last page!");
@@ -110,90 +117,126 @@
       }
       this.switchToPage(AppState.currentPageIndex);
     },
+
     switchToPage: function (pageIndex) {
       if (pageIndex < 0 || pageIndex >= AppState.pages.length) return;
+
+      if (AppState.currentPageIndex === pageIndex) return;
+
       if (AppState.pages[AppState.currentPageIndex]) {
-        AppState.pages[AppState.currentPageIndex].elements = [
-          ...AppState.elements,
-        ];
-        AppState.pages[AppState.currentPageIndex].elementCounter =
-          AppState.elementCounter;
+        AppState.pages[AppState.currentPageIndex].elements = AppState.elements;
+        AppState.pages[AppState.currentPageIndex].elementCounter = AppState.elementCounter;
       }
+
       AppState.currentPageIndex = pageIndex;
-      AppState.elements = [
-        ...AppState.pages[AppState.currentPageIndex].elements,
-      ];
-      AppState.elementCounter =
-        AppState.pages[AppState.currentPageIndex].elementCounter;
-      CanvasManager.clearCanvas();
-      AppState.elements.forEach((element) =>
-        ElementRenderer.renderElement(element),
-      );
-      ElementManager.deselectElement();
-      this.updatePagesPanel();
-      LayerManager.updateLayersPanel();
-      UIManager.updateElementCount();
-      PropertiesPanel.clearPropertiesPanel();
-      if (AppState.elements.length === 0) {
-        UIManager.showCanvasPlaceholder();
-      } else {
-        UIManager.hideCanvasPlaceholder();
-      }
+      AppState.elements = [...AppState.pages[AppState.currentPageIndex].elements];
+      AppState.elementCounter = AppState.pages[AppState.currentPageIndex].elementCounter;
+      
+      requestAnimationFrame(() => {
+        CanvasManager.clearCanvas();
+
+        const fragment = document.createDocumentFragment();
+        AppState.elements.forEach((element) => {
+          const elementDiv = this.createElementDiv(element);
+          fragment.appendChild(elementDiv);
+        });
+        
+        const canvas = document.getElementById("canvas");
+        if (canvas) {
+          canvas.appendChild(fragment);
+        }
+
+        ElementManager.deselectElement();
+        this.updatePagesPanel();
+        LayerManager.updateLayersPanel();
+        UIManager.updateElementCount();
+        PropertiesPanel.clearPropertiesPanel();
+        
+        if (AppState.elements.length === 0) {
+          UIManager.showCanvasPlaceholder();
+        } else {
+          UIManager.hideCanvasPlaceholder();
+        }
+      });
     },
+
+    createElementDiv: function (element) {
+      const div = document.createElement("div");
+      div.id = element.id;
+      div.className = "canvas-element";
+      div.dataset.elementId = element.id;
+      div.style.cssText = `
+        position: absolute;
+        left: ${element.x}px;
+        top: ${element.y}px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: inherit;
+        font-size: 14px;
+        color: white;
+        user-select: none;
+        z-index: ${element.zIndex};
+        transform: rotate(${element.rotation}deg);
+      `;
+      ElementRenderer.applyShapeStyles(div, element);
+      return div;
+    },
+
     updatePagesPanel: function () {
       const pagesList = document.querySelector(".pages-list");
       if (!pagesList) return;
-      pagesList.innerHTML = "";
+
+      const fragment = document.createDocumentFragment();
+      
       AppState.pages.forEach((page, index) => {
         const pageItem = document.createElement("div");
         pageItem.className = "page-item";
-        pageItem.style.cssText = `
-                    padding: 0.5rem;
-                    cursor: pointer;
-                    border-radius: 0.25rem;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    margin-bottom: 0.25rem;
-                    transition: background 0.2s ease;
-                    ${index === AppState.currentPageIndex ? "background: #58a6ff; color: white;" : "background: transparent; color: #f0f6fc;"}
-                `;
+        
+        if (index === AppState.currentPageIndex) {
+          pageItem.classList.add("active");
+        }
+        
         const pageContent = document.createElement("div");
-        pageContent.style.cssText =
-          "display: flex; align-items: center; gap: 0.5rem; flex: 1;";
+        pageContent.className = "page-content";
         pageContent.innerHTML = `📄 ${page.name}`;
         pageContent.dataset.pageIndex = index;
+        
         const deleteBtn = document.createElement("button");
+        deleteBtn.className = "page-delete-btn";
         deleteBtn.innerHTML = "×";
-        deleteBtn.style.cssText = `
-                    background: transparent;
-                    border: none;
-                    color: ${index === AppState.currentPageIndex ? "white" : "#7d8590"};
-                    font-size: 16px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    padding: 2px 6px;
-                    border-radius: 3px;
-                    opacity: ${AppState.pages.length > 1 ? "1" : "0"};
-                    pointer-events: ${AppState.pages.length > 1 ? "auto" : "none"};
-                `;
         deleteBtn.title = "Delete page";
         deleteBtn.dataset.pageIndex = index;
         deleteBtn.dataset.action = "delete-page";
+        
+
+        if (AppState.pages.length <= 1) {
+          deleteBtn.style.display = "none";
+        }
+        
         pageItem.appendChild(pageContent);
         pageItem.appendChild(deleteBtn);
-        pagesList.appendChild(pageItem);
+        fragment.appendChild(pageItem);
       });
+      
+
+      pagesList.innerHTML = "";
+      pagesList.appendChild(fragment);
     },
   };
 
   const CanvasManager = {
+
     clearCanvas: function () {
       const canvas = document.getElementById("canvas");
       if (!canvas) return;
       const elementsToRemove = canvas.querySelectorAll(".canvas-element");
       elementsToRemove.forEach((element) => element.remove());
     },
+
     handleCanvasClick: function (e) {
       if (AppState.currentTool === "select") {
         ElementManager.handleSelection(e);
@@ -201,6 +244,7 @@
         ElementCreator.createElement(e);
       }
     },
+
     handleCanvasDoubleClick: function (e) {
       let target = e.target;
       while (target && !target.classList.contains("canvas-element")) {
@@ -217,21 +261,25 @@
   };
 
   const ElementCreator = {
+    
     createElement: function (e) {
       const mousePos = Utils.getCanvasMousePosition(e);
       const dimensions =
         AppState.defaultDimensions[AppState.currentTool] ||
         AppState.defaultDimensions.rectangle;
+
       const constrainedX = Utils.clamp(
         mousePos.x - dimensions.width / 2,
         AppState.canvas.boundary,
         AppState.canvas.width - dimensions.width - AppState.canvas.boundary,
       );
+
       const constrainedY = Utils.clamp(
         mousePos.y - dimensions.height / 2,
         AppState.canvas.boundary,
         AppState.canvas.height - dimensions.height - AppState.canvas.boundary,
       );
+
       const element = {
         id: Utils.generateElementId(),
         type: AppState.currentTool,
@@ -244,6 +292,7 @@
         textContent: AppState.currentTool === "text" ? "Text" : "",
         zIndex: AppState.elements.length,
       };
+
       AppState.elements.push(element);
       ElementRenderer.renderElement(element);
       ElementManager.selectElement(element);
@@ -254,6 +303,7 @@
   };
 
   const ElementRenderer = {
+
     renderElement: function (element) {
       const canvas = document.getElementById("canvas");
       if (!canvas) return;
@@ -281,6 +331,7 @@
       this.applyShapeStyles(div, element);
       canvas.appendChild(div);
     },
+
     applyShapeStyles: function (div, element) {
       switch (element.type) {
         case "rectangle":
@@ -300,17 +351,20 @@
           break;
       }
     },
+
     styleRectangle: function (div, element) {
       div.style.width = element.width + "px";
       div.style.height = element.height + "px";
       div.style.backgroundColor = element.backgroundColor;
     },
+
     styleCircle: function (div, element) {
       div.style.width = element.width + "px";
       div.style.height = element.width + "px";
       div.style.backgroundColor = element.backgroundColor;
       div.style.borderRadius = "50%";
     },
+
     styleTriangle: function (div, element) {
       div.style.width = "0";
       div.style.height = "0";
@@ -320,6 +374,7 @@
       div.style.borderBottom = `${element.height}px solid ${element.backgroundColor}`;
       div.style.borderTop = "none";
     },
+
     styleLine: function (div, element) {
       div.style.width = element.width + "px";
       div.style.height = "2px";
@@ -338,6 +393,7 @@
             `;
       div.appendChild(arrowHead);
     },
+
     styleText: function (div, element) {
       div.style.width = element.width + "px";
       div.style.height = element.height + "px";
@@ -347,6 +403,7 @@
       div.style.padding = "4px";
       div.textContent = element.textContent;
     },
+
     updateElementDisplay: function (element) {
       const elementDiv = document.getElementById(element.id);
       if (!elementDiv) return;
@@ -361,6 +418,7 @@
   };
 
   const ElementManager = {
+
     handleSelection: function (e) {
       const target = e.target.closest(".canvas-element");
       if (target) {
@@ -370,6 +428,7 @@
         this.deselectElement();
       }
     },
+
     selectElement: function (element) {
       AppState.selectedElement = element;
       document.querySelectorAll(".canvas-element").forEach((el) => {
@@ -384,6 +443,7 @@
       PropertiesPanel.updatePropertiesPanel(element);
       LayerManager.updateLayersPanel();
     },
+
     deselectElement: function () {
       if (AppState.selectedElement) {
         const elementDiv = document.getElementById(AppState.selectedElement.id);
@@ -396,6 +456,7 @@
       PropertiesPanel.clearPropertiesPanel();
       LayerManager.updateLayersPanel();
     },
+
     addResizeHandles: function (elementDiv) {
       const handles = ["nw", "ne", "sw", "se"];
       handles.forEach((handle) => {
@@ -427,6 +488,7 @@
         }
         elementDiv.appendChild(handleDiv);
       });
+
       const rotateDiv = document.createElement("div");
       rotateDiv.className = "rotation-handle rotate-center";
       rotateDiv.innerHTML = "↻";
@@ -452,6 +514,7 @@
       rotateDiv.title = "Drag to rotate";
       elementDiv.appendChild(rotateDiv);
     },
+
     removeResizeHandles: function (elementDiv) {
       elementDiv
         .querySelectorAll(".resize-handle")
@@ -460,6 +523,7 @@
         .querySelectorAll(".rotation-handle")
         .forEach((handle) => handle.remove());
     },
+
     deleteElement: function () {
       if (!AppState.selectedElement) return;
       const elementDiv = document.getElementById(AppState.selectedElement.id);
@@ -475,6 +539,7 @@
         UIManager.showCanvasPlaceholder();
       }
     },
+
     moveElement: function (deltaX, deltaY) {
       if (!AppState.selectedElement) return;
       let newX = AppState.selectedElement.x + deltaX;
@@ -494,6 +559,7 @@
       ElementRenderer.updateElementDisplay(AppState.selectedElement);
       PropertiesPanel.updatePropertiesPanel(AppState.selectedElement);
     },
+
     rotateElement: function (degrees) {
       if (!AppState.selectedElement) return;
       AppState.selectedElement.rotation = Utils.normalizeAngle(
@@ -505,6 +571,7 @@
   };
 
   const MouseHandler = {
+
     handleMouseDown: function (e) {
       if (e.target.classList.contains("resize-handle")) {
         AppState.isResizing = true;
@@ -531,6 +598,7 @@
         }
       }
     },
+
     handleMouseMove: function (e) {
       if (AppState.isDragging && AppState.selectedElement) {
         this.dragElement(e);
@@ -540,6 +608,7 @@
         this.rotateElementWithMouse(e);
       }
     },
+
     handleMouseUp: function (e) {
       if (AppState.isRotating) {
         document.querySelectorAll(".rotation-handle").forEach((handle) => {
@@ -552,6 +621,7 @@
       AppState.resizeHandle = null;
       AppState.rotationStartAngle = 0;
     },
+
     dragElement: function (e) {
       const mousePos = Utils.getCanvasMousePosition(e);
       let newX = mousePos.x - AppState.dragOffset.x;
@@ -575,6 +645,7 @@
       }
       PropertiesPanel.updatePropertiesPanel(AppState.selectedElement);
     },
+
     resizeElement: function (e) {
       const mousePos = Utils.getCanvasMousePosition(e);
       let newWidth = AppState.selectedElement.width;
@@ -697,6 +768,7 @@
       ElementRenderer.updateElementDisplay(AppState.selectedElement);
       PropertiesPanel.updatePropertiesPanel(AppState.selectedElement);
     },
+
     rotateElementWithMouse: function (e) {
       const currentAngle = Utils.getAngleFromCenter(
         e,
@@ -715,6 +787,7 @@
   };
 
   const TextEditor = {
+
     startTextEdit: function (element, elementDiv) {
       const input = document.createElement("input");
       input.type = "text";
@@ -753,6 +826,7 @@
         });
       }
     },
+
     finishTextEdit: function (element, elementDiv, input) {
       element.textContent = input.value || "Text";
       ElementRenderer.updateElementDisplay(element);
@@ -767,6 +841,7 @@
   };
 
   const PropertiesPanel = {
+
     updatePropertiesPanel: function (element) {
       const widthInput = document.getElementById("widthInput");
       const heightInput = document.getElementById("heightInput");
@@ -794,6 +869,7 @@
         }
       }
     },
+
     clearPropertiesPanel: function () {
       const widthInput = document.getElementById("widthInput");
       const heightInput = document.getElementById("heightInput");
@@ -811,6 +887,7 @@
       if (colorHex) colorHex.textContent = "#3b82f6";
       if (textGroup) textGroup.style.display = "none";
     },
+
     updateProperty: function (property, value) {
       if (!AppState.selectedElement) return;
       switch (property) {
@@ -868,6 +945,7 @@
   };
 
   const LayerManager = {
+
     updateLayersPanel: function () {
       const layersList = document.getElementById("layersList");
       if (!layersList) return;
@@ -912,6 +990,7 @@
       });
       this.scrollToSelectedLayer();
     },
+
     getElementIcon: function (type) {
       const icons = {
         text: "📝",
@@ -922,6 +1001,7 @@
       };
       return icons[type] || "📦";
     },
+
     scrollToSelectedLayer: function () {
       if (!AppState.selectedElement) return;
       const layerItem = document.getElementById(
@@ -940,6 +1020,7 @@
         }, 200);
       }
     },
+
     moveLayer: function (direction) {
       if (!AppState.selectedElement) return;
       const visualOrder = [...AppState.elements].sort(
@@ -966,22 +1047,37 @@
   };
 
   const ToolManager = {
+
     selectTool: function (tool) {
+
+      if (AppState.currentTool === tool) return;
+      
       AppState.currentTool = tool;
-      document
-        .querySelectorAll(".tool-btn")
-        .forEach((btn) => btn.classList.remove("active"));
+
+      const currentActive = document.querySelector(".tool-btn.active");
+      if (currentActive) {
+        currentActive.classList.remove("active");
+      }
+
       const toolBtn = document.querySelector(`[data-tool="${tool}"]`);
-      if (toolBtn) toolBtn.classList.add("active");
+      if (toolBtn) {
+        toolBtn.classList.add("active");
+      }
+
       const currentToolEl = document.getElementById("currentTool");
-      if (currentToolEl) currentToolEl.textContent = AppState.tools[tool];
+      if (currentToolEl) {
+        currentToolEl.textContent = AppState.tools[tool];
+      }
+
       const canvas = document.getElementById("canvas");
-      if (canvas)
+      if (canvas) {
         canvas.style.cursor = tool === "select" ? "default" : "crosshair";
+      }
     },
   };
 
   const ZoomManager = {
+
     handleZoom: function (isZoomIn) {
       if (isZoomIn) {
         AppState.zoomLevel = Math.min(
@@ -997,6 +1093,7 @@
       this.applyZoom();
       this.updateZoomDisplay();
     },
+
     applyZoom: function () {
       const canvas = document.getElementById("canvas");
       const canvasWrapper = canvas ? canvas.parentElement : null;
@@ -1013,12 +1110,14 @@
       canvasWrapper.style.overflow = "auto";
       canvasWrapper.style.padding = "50px";
     },
+
     updateZoomDisplay: function () {
       const zoomDisplay = document.querySelector(".zoom-level");
       if (zoomDisplay) {
         zoomDisplay.textContent = Math.round(AppState.zoomLevel * 100) + "%";
       }
     },
+
     resetZoom: function () {
       AppState.zoomLevel = 1;
       this.applyZoom();
@@ -1070,6 +1169,7 @@
           break;
       }
     },
+
     handleMouseWheel: function (e) {
       const canvas = document.getElementById("canvas");
       const canvasWrapper = canvas ? canvas.parentElement : null;
@@ -1094,18 +1194,22 @@
   };
 
   const UIManager = {
+
     updateElementCount: function () {
       const elementCount = document.getElementById("elementCount");
       if (elementCount) elementCount.textContent = AppState.elements.length;
     },
+
     hideCanvasPlaceholder: function () {
       const placeholder = document.querySelector(".canvas-placeholder");
       if (placeholder) placeholder.style.display = "none";
     },
+
     showCanvasPlaceholder: function () {
       const placeholder = document.querySelector(".canvas-placeholder");
       if (placeholder) placeholder.style.display = "flex";
     },
+
     updateUI: function () {
       this.updateElementCount();
       LayerManager.updateLayersPanel();
@@ -1113,6 +1217,7 @@
   };
 
   const StorageManager = {
+
     saveToStorage: function () {
       if (AppState.pages[AppState.currentPageIndex]) {
         AppState.pages[AppState.currentPageIndex].elements = [
@@ -1135,6 +1240,7 @@
         }, 2000);
       }
     },
+
     loadFromStorage: function () {
       const saved = localStorage.getItem("figmaDesignTool");
       if (!saved) return;
@@ -1165,6 +1271,7 @@
   };
 
   const ExportManager = {
+
     exportJSON: function () {
       const data = {
         elements: AppState.elements,
@@ -1178,6 +1285,7 @@
       });
       this.downloadFile(blob, "design.json");
     },
+
     exportHTML: function () {
       let html = `<!DOCTYPE html>
 <html lang="en">
@@ -1218,6 +1326,7 @@
       const blob = new Blob([html], { type: "text/html" });
       this.downloadFile(blob, "design.html");
     },
+
     downloadFile: function (blob, filename) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -1229,6 +1338,7 @@
   };
 
   const EventHandler = {
+
     init: function () {
       document.addEventListener("click", this.handleClick.bind(this));
       document.addEventListener("mousedown", this.handleMouseDown.bind(this));
@@ -1239,11 +1349,20 @@
       document.addEventListener("keydown", this.handleKeyDown.bind(this));
       document.addEventListener("input", this.handleInput.bind(this));
     },
+
     handleClick: function (e) {
-      if (e.target.classList.contains("tool-btn")) {
-        const tool = e.target.closest(".tool-btn").dataset.tool;
-        if (tool) ToolManager.selectTool(tool);
-      } else if (e.target.classList.contains("zoom-btn")) {
+
+      if (e.target.closest(".tool-btn")) {
+        e.preventDefault();
+        const toolBtn = e.target.closest(".tool-btn");
+        const tool = toolBtn.dataset.tool;
+        if (tool && !toolBtn.classList.contains("active")) {
+          ToolManager.selectTool(tool);
+        }
+        return;
+      }
+      
+      if (e.target.classList.contains("zoom-btn")) {
         const isZoomIn = e.target.textContent === "+";
         ZoomManager.handleZoom(isZoomIn);
       } else if (e.target.classList.contains("layer-btn")) {
@@ -1254,11 +1373,12 @@
       } else if (e.target.dataset.action === "delete-page") {
         const pageIndex = parseInt(e.target.dataset.pageIndex);
         PageManager.deletePage(pageIndex);
-      } else if (e.target.closest("[data-page-index]")) {
-        const pageIndex = parseInt(
-          e.target.closest("[data-page-index]").dataset.pageIndex,
-        );
-        PageManager.switchToPage(pageIndex);
+      } else if (e.target.closest(".page-content")) {
+        const pageContent = e.target.closest(".page-content");
+        const pageIndex = parseInt(pageContent.dataset.pageIndex);
+        if (!isNaN(pageIndex)) {
+          PageManager.switchToPage(pageIndex);
+        }
       } else if (e.target.id === "exportJSONBtn") {
         ExportManager.exportJSON();
       } else if (e.target.id === "exportHTMLBtn") {
@@ -1279,11 +1399,13 @@
         CanvasManager.handleCanvasClick(e);
       }
     },
+
     handleMouseDown: function (e) {
       if (e.target.closest("#canvas")) {
         MouseHandler.handleMouseDown(e);
       }
     },
+
     handleMouseMove: function (e) {
       if (
         e.target.closest("#canvas") ||
@@ -1294,20 +1416,25 @@
         MouseHandler.handleMouseMove(e);
       }
     },
+
     handleMouseUp: function (e) {
       MouseHandler.handleMouseUp(e);
     },
+
     handleDoubleClick: function (e) {
       if (e.target.closest("#canvas")) {
         CanvasManager.handleCanvasDoubleClick(e);
       }
     },
+
     handleWheel: function (e) {
       KeyboardHandler.handleMouseWheel(e);
     },
+
     handleKeyDown: function (e) {
       KeyboardHandler.handleKeyDown(e);
     },
+
     handleInput: function (e) {
       if (e.target.id === "widthInput") {
         PropertiesPanel.updateProperty("width", e.target.value);
@@ -1324,6 +1451,7 @@
   };
 
   const App = {
+    
     init: function () {
       EventHandler.init();
       StorageManager.loadFromStorage();
