@@ -576,6 +576,9 @@ main #right-section .tab-content .sidebar-section .properties-panel .property-gr
   justify-content: center;
   flex-direction: column;
 }
+main #right-section .tab-content .sidebar-section .properties-panel #textContentGroup {
+  margin-left: 10%;
+}
 main #right-section .tab-content .sidebar-section .export-controls {
   display: flex;
   align-items: center;
