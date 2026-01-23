@@ -1,18 +1,28 @@
 $colors: (
-  primary: #58a6ff,
-  success: #238636,
-  success-hover: #2ea043,
-  bg-primary: #0d1117,
-  bg-secondary: #161b22,
-  bg-tertiary: #21262d,
-  border: #30363d,
-  text-primary: #f0f6fc,
-  text-secondary: #7d8590,
-  text-muted: #6e7681,
-  canvas-bg: white,
-  shadow: rgba(0, 0, 0, 0.3),
-  save: rgba(119, 120, 117, 0.832),
-  save-hover: rgba(119, 120, 117, 0.988),
+  primary: #0066ff,
+  primary-hover: #0052cc,
+  primary-light: #4d94ff,
+  success: #00c851,
+  success-hover: #00a844,
+  warning: #ffbb33,
+  danger: #ff4444,
+  danger-hover: #cc0000,
+  bg-primary: #0a0e1a,
+  bg-secondary: #1a1f2e,
+  bg-tertiary: #252b3d,
+  bg-quaternary: #2d3548,
+  border: #3d4454,
+  border-light: #4a5568,
+  text-primary: #ffffff,
+  text-secondary: #a0aec0,
+  text-muted: #718096,
+  canvas-bg: #f8fafc,
+  shadow: rgba(0, 0, 0, 0.4),
+  shadow-light: rgba(0, 0, 0, 0.1),
+  accent: #7c3aed,
+  accent-hover: #6d28d9,
+  gradient-start: #667eea,
+  gradient-end: #764ba2,
 );
 
 $sizes: (
@@ -47,12 +57,34 @@ $border-radius: (
   justify-content: space-between;
 }
 
+@mixin glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@mixin gradient-bg(
+  $start: map-get($colors, gradient-start),
+  $end: map-get($colors, gradient-end)
+) {
+  background: linear-gradient(135deg, $start, $end);
+}
+
+@mixin smooth-shadow($size: md) {
+  @if $size == sm {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  } @else if $size == md {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  } @else if $size == lg {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+}
+
 @mixin button-base {
   border: none;
   cursor: pointer;
-  transition: all 0.15s ease-out; 
+  transition: all 0.15s ease-out;
   font-family: inherit;
-
   backface-visibility: hidden;
   transform: translateZ(0);
   will-change: transform, background-color;
@@ -60,9 +92,9 @@ $border-radius: (
   &:focus {
     outline: none;
   }
-  
+
   &:active {
-    transform: translateZ(0) scale(0.98); 
+    transform: translateZ(0) scale(0.98);
   }
 }
 
@@ -99,53 +131,170 @@ main {
 
   .navbar {
     height: map-get($sizes, nav-height);
-    background-color: map-get($colors, bg-secondary);
+    @include gradient-bg(
+      map-get($colors, bg-secondary),
+      map-get($colors, bg-tertiary)
+    );
     color: map-get($colors, text-primary);
-    border-bottom: 2px solid map-get($colors, border);
-
-    padding: map-get($spacing, md);
-
+    border-bottom: 1px solid rgba(map-get($colors, border), 0.3);
+    padding: map-get($spacing, md) map-get($spacing, xl);
     @include flex-between;
+    position: relative;
+    @include smooth-shadow(md);
+    backdrop-filter: blur(20px);
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+      );
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(map-get($colors, primary), 0.3),
+        transparent
+      );
+    }
 
     #nav-left {
       @include flex-center;
-      gap: map-get($spacing, xs);
+      gap: map-get($spacing, lg);
 
       .logo {
-        font-size: map-get($spacing, xl);
+        @include flex-center;
+        gap: map-get($spacing, sm);
+        font-size: 1.5rem;
+        color: map-get($colors, primary);
+        font-weight: 700;
+        transition: all 0.3s ease;
+
+        i {
+          background: linear-gradient(
+            135deg,
+            map-get($colors, primary),
+            map-get($colors, primary-light)
+          );
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .logo-text {
+          background: linear-gradient(
+            135deg,
+            map-get($colors, primary),
+            map-get($colors, primary-light)
+          );
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          font-size: 1.1rem;
+        }
+
+        &:hover {
+          transform: scale(1.05);
+          filter: drop-shadow(0 0 8px rgba(map-get($colors, primary), 0.5));
+        }
       }
 
-      .save-status {
-        color: map-get($colors, success);
+      .file-info {
+        display: flex;
+        align-items: center;
+        gap: map-get($spacing, sm);
+        padding: map-get($spacing, xs) map-get($spacing, md);
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: map-get($border-radius, lg);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(map-get($colors, primary), 0.3);
+        }
+
+        .file-name {
+          font-weight: 500;
+          color: map-get($colors, text-primary);
+        }
+
+        .save-status {
+          color: map-get($colors, success);
+          font-size: 1.2rem;
+          animation: pulse 2s infinite;
+        }
       }
     }
 
     #nav-center {
+      display: flex;
+      align-items: center;
+      gap: map-get($spacing, lg);
+
       .zoom-controls {
         display: flex;
         align-items: center;
         gap: map-get($spacing, sm);
-        background: map-get($colors, bg-tertiary);
-        padding: map-get($spacing, xs) map-get($spacing, sm);
-        border-radius: map-get($border-radius, md);
+        background: rgba(255, 255, 255, 0.08);
+        padding: map-get($spacing, sm) map-get($spacing, md);
+        border-radius: map-get($border-radius, lg);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.12);
+          border-color: rgba(map-get($colors, primary), 0.4);
+          transform: translateY(-1px);
+          @include smooth-shadow(sm);
+        }
 
         .zoom-btn {
-          width: 1.5rem;
-          height: 1.5rem;
+          width: 1.8rem;
+          height: 1.8rem;
           @include button-base;
-          background: transparent;
-          border: 1px solid map-get($colors, border);
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
           color: map-get($colors, text-primary);
-          border-radius: map-get($border-radius, sm);
-          @include flex-center;
-          font-size: 0.75rem;
+          border-radius: map-get($border-radius, md);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.8rem;
           font-weight: bold;
           line-height: 1;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
           &:hover {
-            color: map-get($colors, text-primary);
-            background: map-get($colors, border);
-            transform: scale(0.8);
+            color: white;
+            background: linear-gradient(
+              135deg,
+              map-get($colors, primary),
+              map-get($colors, primary-hover)
+            );
+            border-color: map-get($colors, primary);
+            transform: translateZ(0) scale(1.05);
+            box-shadow: 0 2px 8px rgba(map-get($colors, primary), 0.3);
+          }
+
+          &:active {
+            transform: translateZ(0) scale(0.95);
           }
         }
 
@@ -153,321 +302,374 @@ main {
           min-width: 2.5rem;
           text-align: center;
           font-size: 0.75rem;
-          font-weight: 500;
+          font-weight: 600;
           color: map-get($colors, text-primary);
+          padding: map-get($spacing, xs);
+          background: rgba(map-get($colors, primary), 0.1);
+          border-radius: map-get($border-radius, sm);
+          border: 1px solid rgba(map-get($colors, primary), 0.2);
+        }
+      }
+
+      .undo-redo-controls {
+        display: flex;
+        align-items: center;
+        gap: map-get($spacing, sm);
+        background: rgba(255, 255, 255, 0.08);
+        padding: map-get($spacing, sm) map-get($spacing, md);
+        border-radius: map-get($border-radius, lg);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.12);
+          border-color: rgba(map-get($colors, primary), 0.4);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .undo-btn,
+        .redo-btn {
+          width: 1.8rem;
+          height: 1.8rem;
+          @include button-base;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: map-get($colors, text-primary);
+          border-radius: map-get($border-radius, md);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.8rem;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+          &:hover {
+            color: white;
+            background: linear-gradient(
+              135deg,
+              map-get($colors, primary),
+              map-get($colors, primary-hover)
+            );
+            border-color: map-get($colors, primary);
+            transform: translateZ(0) scale(1.05);
+            box-shadow: 0 2px 8px rgba(map-get($colors, primary), 0.3);
+          }
+
+          &:active {
+            transform: translateZ(0) scale(0.95);
+            box-shadow: 0 1px 4px rgba(map-get($colors, primary), 0.2);
+          }
+
+          &:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+
+            &:hover {
+              background: rgba(255, 255, 255, 0.1);
+              border-color: rgba(255, 255, 255, 0.2);
+              color: map-get($colors, text-primary);
+              transform: none;
+              box-shadow: none;
+            }
+          }
         }
       }
     }
 
     #nav-right {
       @include flex-center;
-      gap: map-get($spacing, sm);
+      gap: map-get($spacing, lg);
 
-      .share-btn {
+      .delete-btn {
         @include button-base;
-        padding: map-get($spacing, sm) map-get($spacing, xl);
+        padding: map-get($spacing, xs) map-get($spacing, sm);
         border: none;
-        border-radius: map-get($border-radius, lg);
-        background-color: map-get($colors, success);
-
-        &:hover {
-          background-color: map-get($colors, success-hover);
-          transform: scale(0.9);
-        }
-      }
-
-      .user-menu {
-        padding: map-get($spacing, xs);
-        border: 0.12rem solid map-get($colors, success);
-        border-radius: map-get($border-radius, circle);
-      }
-    }
-  }
-
-  .section-container {
-    height: calc(100vh - #{map-get($sizes, nav-height)} - 40px);
-    width: 100%;
-    display: flex;
-
-    #left-section {
-      width: clamp(20vw, 17vw, 22vw);
-      background-color: map-get($colors, bg-primary);
-      color: map-get($colors, text-primary);
-      border-right: 2px solid map-get($colors, border);
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-
-      .sidebar-section {
-        height: 50%;
-        display: flex;
-        flex-direction: column;
-        padding: map-get($spacing, lg);
-
-        &.page-section {
-          border-bottom: 2px solid map-get($colors, border);
-        }
-
-        &.layers-section {
-          border-bottom: none;
-        }
-
-        .section-header {
-          @include flex-between;
-          margin-bottom: map-get($spacing, lg);
-          padding-bottom: map-get($spacing, sm);
-          border-bottom: 1px solid rgba(map-get($colors, border), 0.5);
-          flex-shrink: 0;
-
-          h3 {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: map-get($colors, text-primary);
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-          }
-
-          .add-btn {
-            cursor: pointer;
-            width: 1.5rem;
-            height: 1.5rem;
-            @include button-base;
-            background: map-get($colors, bg-tertiary);
-            border: 1px solid map-get($colors, border);
-            color: map-get($colors, text-secondary);
-            border-radius: map-get($border-radius, md);
-            @include flex-center;
-            font-size: 0.9rem;
-            font-weight: bold;
-            transition: all 0.2s ease;
-
-            &:hover {
-              background: map-get($colors, primary);
-              color: white;
-              border-color: map-get($colors, primary);
-              transform: scale(1.05);
-            }
-          }
-
-          .layer-controls {
-            display: flex;
-            gap: map-get($spacing, xs);
-
-            .layer-btn {
-              cursor: pointer;
-              width: 1.5rem;
-              height: 1.5rem;
-              @include button-base;
-              background: map-get($colors, bg-tertiary);
-              border: 1px solid map-get($colors, border);
-              color: map-get($colors, text-secondary);
-              border-radius: map-get($border-radius, md);
-              @include flex-center;
-              font-size: 0.8rem;
-              font-weight: bold;
-              transition: all 0.2s ease;
-
-              &:hover {
-                background: map-get($colors, primary);
-                color: white;
-                border-color: map-get($colors, primary);
-                transform: scale(1.05);
-              }
-            }
-          }
-        }
-
-        .pages-list {
-          flex: 1;
-          overflow-y: auto;
-          overflow-x: hidden;
-          max-height: calc(100% - 60px);
-
-          &::-webkit-scrollbar {
-            display: none;
-          }
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-
-          .page-item {
-            background: transparent;
-            padding: map-get($spacing, sm) map-get($spacing, md);
-            cursor: pointer;
-            border: 1px solid transparent;
-            border-radius: map-get($border-radius, md);
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.15s ease-out; 
-            margin-bottom: map-get($spacing, sm);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            color: map-get($colors, text-primary);
-            
-            // Performance optimizations
-            backface-visibility: hidden;
-            transform: translateZ(0);
-            will-change: background-color, color;
-
-            &:last-child {
-              margin-bottom: 0;
-            }
-
-            &:hover {
-              background: map-get($colors, bg-tertiary);
-              border-color: map-get($colors, border);
-              transform: translateZ(0) scale(1.02);
-            }
-            
-            &.active {
-              background: map-get($colors, primary);
-              color: white;
-              transform: translateZ(0) scale(1.01);
-              
-              .page-delete-btn {
-                color: white;
-              }
-            }
-            
-            .page-content {
-              display: flex;
-              align-items: center;
-              gap: map-get($spacing, sm);
-              flex: 1;
-              transition: inherit;
-            }
-            
-            .page-delete-btn {
-              background: transparent;
-              border: none;
-              color: map-get($colors, text-secondary);
-              font-size: 16px;
-              font-weight: bold;
-              cursor: pointer;
-              padding: 2px 6px;
-              border-radius: 3px;
-              transition: all 0.15s ease-out;
-              transform: translateZ(0);
-              
-              &:hover {
-                background: rgba(255, 255, 255, 0.1);
-                transform: translateZ(0) scale(1.1);
-              }
-              
-              &:active {
-                transform: translateZ(0) scale(0.95);
-              }
-            }
-          }
-          }
-        }
-
-        .layers-list {
-          flex: 1;
-          overflow-y: auto;
-          overflow-x: hidden;
-          max-height: calc(100% - 60px);
-
-          &::-webkit-scrollbar {
-            display: none;
-          }
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-
-          .layer-item {
-            padding: map-get($spacing, sm) map-get($spacing, md);
-            border-radius: map-get($border-radius, md);
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
-            margin-bottom: map-get($spacing, sm);
-            display: flex;
-            align-items: center;
-            gap: map-get($spacing, sm);
-            flex-shrink: 0;
-            transform-origin: center;
-
-            &:last-child {
-              margin-bottom: 0;
-            }
-
-            &:hover {
-              background: map-get($colors, bg-tertiary);
-              border-color: map-get($colors, border);
-            }
-
-            .layer-icon {
-              flex-shrink: 0;
-            }
-
-            .layer-name {
-              flex: 1;
-            }
-          }
-        }
-      }
-    }
-
-    #canvas-section {
-      flex: 1;
-      background: #2c2c2c;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      height: 100%;
-      overflow: hidden;
-      min-height: 0;
-
-      .canvas-wrapper {
-        flex: 1;
+        border-radius: map-get($border-radius, md);
+        background: linear-gradient(
+          135deg,
+          map-get($colors, danger),
+          map-get($colors, danger-hover)
+        );
+        color: white;
+        box-shadow: 0 2px 8px rgba(map-get($colors, danger), 0.3);
+        font-weight: 500;
+        font-size: 0.8rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #2c2c2c;
-        position: relative;
-        width: 100%;
-        height: 100%;
-        padding: 0;
-        overflow: hidden;
-        &::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: radial-gradient(
-            circle at 1px 1px,
-            rgba(255, 255, 255, 0.08) 1px,
-            transparent 0
+        gap: map-get($spacing, xs);
+        height: 2rem;
+        min-width: auto;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+        &:hover {
+          background: linear-gradient(
+            135deg,
+            map-get($colors, danger-hover),
+            #a71e2a
           );
-          background-size: 20px 20px;
-          pointer-events: none;
-          z-index: 1;
+          transform: translateY(-1px) scale(1.02);
+          box-shadow: 0 4px 12px rgba(map-get($colors, danger), 0.4);
         }
 
-        .canvas {
-          background: #f5f5f5;
-          border-radius: 0;
-          box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
-          position: relative;
-          width: 100%;
-          height: 100%;
-          z-index: 10;
-          overflow: hidden;
+        &:active {
+          transform: translateY(0) scale(0.98);
+          box-shadow: 0 2px 6px rgba(map-get($colors, danger), 0.3);
+        }
 
-          &::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            pointer-events: none;
-            z-index: 1001;
+        &:disabled {
+          background: linear-gradient(135deg, #6c757d, #5a6268);
+          cursor: not-allowed;
+          transform: none;
+          opacity: 0.6;
+
+          &:hover {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            transform: none;
+            box-shadow: 0 2px 8px rgba(#6c757d, 0.3);
           }
+        }
+
+        i {
+          font-size: 0.9rem;
+        }
+
+        span {
+          font-size: 0.75rem;
+        }
+      }
+
+      i {
+        font-size: 1rem;
+      }
+
+      span {
+        font-size: 0.85rem;
+      }
+    }
+
+    .share-btn {
+      @include button-base;
+      padding: map-get($spacing, sm) map-get($spacing, xl);
+      border: none;
+      border-radius: map-get($border-radius, lg);
+      @include gradient-bg(
+        map-get($colors, success),
+        map-get($colors, success-hover)
+      );
+      color: white;
+      @include smooth-shadow(sm);
+      font-weight: 600;
+      font-size: 0.9rem;
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+        transition: left 0.5s ease;
+      }
+
+      &:hover {
+        @include gradient-bg(map-get($colors, success-hover), #00a844);
+        transform: translateY(-2px);
+        @include smooth-shadow(lg);
+
+        &::before {
+          left: 100%;
+        }
+      }
+
+      &:active {
+        transform: translateY(0) scale(0.98);
+      }
+    }
+
+    .user-menu {
+      padding: map-get($spacing, sm);
+      border: 2px solid map-get($colors, primary);
+      border-radius: map-get($border-radius, circle);
+      background: linear-gradient(
+        135deg,
+        map-get($colors, primary),
+        map-get($colors, primary-hover)
+      );
+      color: white;
+      width: 2.8rem;
+      height: 2.8rem;
+      @include flex-center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      @include smooth-shadow(sm);
+      font-size: 1.1rem;
+      font-weight: 600;
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+          circle at center,
+          rgba(255, 255, 255, 0.2) 0%,
+          transparent 70%
+        );
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      &:hover {
+        transform: scale(1.15) rotate(5deg);
+        @include smooth-shadow(lg);
+        border-color: map-get($colors, primary-light);
+        background: linear-gradient(
+          135deg,
+          map-get($colors, primary-light),
+          map-get($colors, primary)
+        );
+
+        &::before {
+          opacity: 1;
+        }
+      }
+
+      &:active {
+        transform: scale(1.05);
+      }
+    }
+  }
+}
+
+.section-container {
+  height: calc(100vh - #{map-get($sizes, nav-height)} - 40px);
+  width: 100%;
+  display: flex;
+
+  #left-section {
+    width: clamp(280px, 20vw, 320px);
+    background: linear-gradient(
+      180deg,
+      map-get($colors, bg-primary) 0%,
+      rgba(map-get($colors, bg-primary), 0.95) 100%
+    );
+    color: map-get($colors, text-primary);
+    border-right: 1px solid rgba(map-get($colors, border), 0.6);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    backdrop-filter: blur(10px);
+
+    // Subtle gradient overlay
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(map-get($colors, primary), 0.02) 0%,
+        transparent 50%
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .sidebar-section {
+      height: 50%;
+      display: flex;
+      flex-direction: column;
+      padding: map-get($spacing, xl) map-get($spacing, lg);
+      position: relative;
+      z-index: 2;
+
+      &.page-section {
+        border-bottom: 1px solid rgba(map-get($colors, border), 0.3);
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.02) 0%,
+          transparent 100%
+        );
+      }
+
+      &.layers-section {
+        border-bottom: none;
+        background: linear-gradient(
+          135deg,
+          transparent 0%,
+          rgba(map-get($colors, primary), 0.01) 100%
+        );
+      }
+
+      .section-header {
+        @include flex-between;
+        margin-bottom: map-get($spacing, xl);
+        padding: map-get($spacing, md) 0;
+        border-bottom: 1px solid rgba(map-get($colors, primary), 0.15);
+        flex-shrink: 0;
+        position: relative;
+
+        // Subtle glow effect
+        &::after {
+          content: "";
+          position: absolute;
+          bottom: -1px;
+          left: 0;
+          width: 30%;
+          height: 1px;
+          background: linear-gradient(
+            90deg,
+            map-get($colors, primary),
+            transparent
+          );
+          opacity: 0.6;
+        }
+
+        h3 {
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: map-get($colors, text-primary);
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          position: relative;
+
+          // Subtle text glow
+          text-shadow: 0 0 10px rgba(map-get($colors, primary), 0.3);
+        }
+
+        .add-btn {
+          cursor: pointer;
+          width: 2rem;
+          height: 2rem;
+          @include button-base;
+          background: rgba(map-get($colors, primary), 0.1);
+          border: 1px solid rgba(map-get($colors, primary), 0.2);
+          color: map-get($colors, primary);
+          border-radius: map-get($border-radius, lg);
+          @include flex-center;
+          font-size: 1rem;
+          font-weight: bold;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          overflow: hidden;
 
           &::before {
             content: "";
@@ -476,284 +678,1029 @@ main {
             left: 0;
             right: 0;
             bottom: 0;
-            background:
-              linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-              linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
-            background-size: 20px 20px;
-            pointer-events: none;
-            z-index: 0;
+            background: linear-gradient(
+              135deg,
+              rgba(map-get($colors, primary), 0.1),
+              transparent
+            );
+            opacity: 0;
+            transition: opacity 0.3s ease;
           }
 
-          .canvas-content {
-            min-width: 100%;
-            min-height: 100%;
-            width: auto;
-            height: auto;
-            position: relative;
-          }
+          &:hover {
+            background: map-get($colors, primary);
+            color: white;
+            border-color: map-get($colors, primary);
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 4px 15px rgba(map-get($colors, primary), 0.4);
 
-          .canvas-placeholder {
-            @include flex-center;
-            height: 100%;
-            width: 100%;
-            color: #8c8c8c;
-            position: relative;
-
-            .placeholder-content {
-              text-align: center;
-
-              .placeholder-icon {
-                font-size: 2.5rem;
-                margin-bottom: map-get($spacing, md);
-                opacity: 0.5;
-              }
-
-              p {
-                font-size: 0.9rem;
-                font-weight: 400;
-                opacity: 0.7;
-                color: #8c8c8c;
-              }
+            &::before {
+              opacity: 1;
             }
           }
+
+          &:active {
+            transform: scale(0.95) rotate(90deg);
+          }
         }
-      }
 
-      .bottom-toolbar {
-        position: fixed;
-        bottom: 8.2%;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 100;
-        @include flex-between;
-        background: #2c2c2c;
-        border: 1px solid #3c3c3c;
-        border-radius: 8px;
-        padding: 8px 16px;
-        color: white;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
-        will-change: transform;
+        .layer-controls {
+          display: flex;
+          gap: map-get($spacing, sm);
+          background: rgba(map-get($colors, bg-tertiary), 0.5);
+          padding: map-get($spacing, xs);
+          border-radius: map-get($border-radius, lg);
+          border: 1px solid rgba(map-get($colors, border), 0.3);
 
-        .toolbar-left {
-          @include flex-center;
-          gap: 4px;
-
-          .tool-btn {
+          .layer-btn {
+            cursor: pointer;
+            width: 1.8rem;
+            height: 1.8rem;
             @include button-base;
-            width: 32px;
-            height: 32px;
-            background: transparent;
-            border: none;
-            border-radius: 4px;
-            color: #b3b3b3;
+            background: rgba(map-get($colors, primary), 0.1);
+            border: 1px solid rgba(map-get($colors, primary), 0.2);
+            color: map-get($colors, primary);
+            border-radius: map-get($border-radius, md);
             @include flex-center;
-            font-size: 14px;
-            transition: all 0.15s ease-out; 
-            will-change: background-color, color; 
-            
-
-            backface-visibility: hidden;
-            transform: translateZ(0);
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
             &:hover {
-              background: #3c3c3c;
+              background: map-get($colors, primary);
               color: white;
-              transform: translateZ(0) scale(1.05);
+              border-color: map-get($colors, primary);
+              transform: scale(1.15);
+              box-shadow: 0 2px 8px rgba(map-get($colors, primary), 0.3);
             }
 
-            &.active {
-              background: #0d99ff;
-              color: white;
-              transform: translateZ(0) scale(1.02); 
+            &:active {
+              transform: scale(0.9);
             }
-
-            .tool-icon {
-              font-size: 14px;
-              font-weight: 500;
-              transition: inherit; 
-            }
-          }
-        }
-
-        .toolbar-right {
-          .canvas-info {
-            font-size: 12px;
-            color: #b3b3b3;
-            font-weight: 400;
-            margin-left: 12px;
           }
         }
       }
-    }
 
-    #right-section {
-      width: clamp(20vw, 17vw, 22vw);
-      background-color: map-get($colors, bg-primary);
-      color: map-get($colors, text-primary);
-      border-left: 2px solid map-get($colors, border);
-      overflow: hidden;
+      .pages-list {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        max-height: calc(100% - 80px);
+        padding-right: map-get($spacing, xs);
 
-      .sidebar-tabs {
-        @include flex-center;
-        border-bottom: 2.5px solid rgba(137, 43, 226, 0.504);
-        padding-bottom: map-get($spacing, xs);
-        h2 {
-          font-size: 1.5rem;
+        &::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: rgba(map-get($colors, border), 0.1);
+          border-radius: 2px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: rgba(map-get($colors, primary), 0.3);
+          border-radius: 2px;
+          transition: background 0.3s ease;
+
+          &:hover {
+            background: rgba(map-get($colors, primary), 0.5);
+          }
+        }
+
+        .page-item {
+          background: rgba(255, 255, 255, 0.02);
+          padding: map-get($spacing, md) map-get($spacing, lg);
+          cursor: pointer;
+          border: 1px solid rgba(map-get($colors, border), 0.2);
+          border-radius: map-get($border-radius, lg);
+          font-size: 0.9rem;
           font-weight: 500;
-        }
-      }
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          margin-bottom: map-get($spacing, md);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          color: map-get($colors, text-primary);
+          position: relative;
+          overflow: hidden;
 
-      .tab-content {
-        .sidebar-section {
-          padding: map-get($spacing, sm);
-          border-bottom: 1px solid map-get($colors, border);
+          backface-visibility: hidden;
+          transform: translateZ(0);
+          will-change: background-color, color, transform;
 
-          .section-header {
-            padding-bottom: map-get($spacing, sm);
-            h3 {
-              font-weight: 400;
-              font-size: 1rem;
-            }
-          }
-
-          .properties-panel {
-            .property-group {
-              padding-bottom: map-get($spacing, xl);
-              @include flex-center;
-              flex-direction: column;
-              gap: 2px;
-              label {
-                font-size: 0.8rem;
-              }
-              input {
-                width: clamp(3.5rem, 15vw, 19rem);
-                height: 30px;
-                color: map-get($colors, text-primary);
-
-                background: map-get($colors, bg-tertiary);
-                border-radius: map-get($border-radius, lg);
-                border: 1px solid map-get($colors, border);
-                padding: 1px 5px;
-                transition: all 0.5s ease;
-              }
-
-              input:hover {
-                border: 1px solid map-get($colors, primary);
-              }
-
-              input[type="color"] {
-                cursor: pointer;
-              }
-
-              .color-input-wrapper {
-                @include flex-center;
-                flex-direction: column;
-              }
-            }
-
-            #textContentGroup{
-              margin-left: 10%;
-            }
-          }
-
-          .export-controls {
-            @include flex-center;
-            flex-direction: column;
-
-            .export-btn {
-              cursor: pointer;
-              width: clamp(3.5rem, 15vw, 19rem);
-              height: 30px;
-              color: map-get($colors, text-primary);
-              background: map-get($colors, bg-tertiary);
-              border-radius: map-get($border-radius, lg);
-              border: 1px solid map-get($colors, border);
-              margin-bottom: map-get($spacing, xl);
-
-              transition: all 0.2s ease;
-              &:hover {
-                border: 1px solid map-get($colors, primary);
-                transform: scale(1.1);
-              }
-            }
-          }
-
-          &:has(.export-controls) {
-            border-bottom: none;
+          &::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+              90deg,
+              transparent,
+              rgba(map-get($colors, primary), 0.1),
+              transparent
+            );
+            transition: left 0.5s ease;
           }
 
           &:last-child {
-            border-bottom: none;
+            margin-bottom: 0;
           }
-        }
-      }
-    }
-  }
-
-  .status-bar {
-    @include flex-between;
-    margin-bottom: 0%;
-    padding: map-get($spacing, sm);
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1000;
-
-    background-color: map-get($colors, bg-secondary);
-    color: map-get($colors, text-primary);
-    border-top: 2px solid map-get($colors, border);
-
-    #status-left {
-      @include flex-center;
-      padding-left: map-get($spacing, xs);
-      gap: map-get($spacing, xl);
-      font-size: 0.8rem;
-      color: map-get($colors, text-secondary);
-    }
-
-    .devinfo {
-      @include flex-center;
-      gap: 0.5rem;
-
-      #tag {
-        a {
-          font-size: 18px;
-          opacity: 0.7;
-          color: white;
-          font-size: 20px;
-          margin: 0 8px;
-          text-decoration: none;
 
           &:hover {
-            color: #58a6ff;
-          }
-        }
-      }
+            background: rgba(map-get($colors, primary), 0.08);
+            border-color: rgba(map-get($colors, primary), 0.3);
+            transform: translateZ(0) translateX(4px);
+            box-shadow: 0 4px 15px rgba(map-get($colors, primary), 0.15);
 
-      .name {
-        h5 {
-          font-weight: 400  !important;
-          opacity: 0.9;
+            &::before {
+              left: 100%;
+            }
+          }
+
+          &.active {
+            background: linear-gradient(
+              135deg,
+              map-get($colors, primary),
+              map-get($colors, primary-hover)
+            );
+            color: white;
+            transform: translateZ(0) translateX(6px);
+            border-color: map-get($colors, primary-light);
+            box-shadow: 0 6px 20px rgba(map-get($colors, primary), 0.3);
+
+            .page-delete-btn {
+              color: rgba(255, 255, 255, 0.8);
+
+              &:hover {
+                color: white;
+                background: rgba(255, 255, 255, 0.2);
+              }
+            }
+          }
+
+          .page-content {
+            display: flex;
+            align-items: center;
+            gap: map-get($spacing, md);
+            flex: 1;
+            transition: inherit;
+            font-weight: 600;
+          }
+
+          .page-delete-btn {
+            background: transparent;
+            border: none;
+            color: map-get($colors, text-secondary);
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: map-get($spacing, xs) map-get($spacing, sm);
+            border-radius: map-get($border-radius, md);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateZ(0);
+            opacity: 0.7;
+
+            &:hover {
+              background: rgba(map-get($colors, danger), 0.2);
+              color: map-get($colors, danger);
+              transform: translateZ(0) scale(1.2);
+              opacity: 1;
+            }
+
+            &:active {
+              transform: translateZ(0) scale(0.9);
+            }
+          }
         }
       }
     }
 
-    #status-right {
+    .layers-list {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      max-height: calc(100% - 80px);
       padding-right: map-get($spacing, xs);
 
-      #status-btn {
-        @include button-base;
-        padding: map-get($spacing, sm) map-get($spacing, xl);
-        border: none;
-        border-radius: map-get($border-radius, lg);
-        background-color: map-get($colors, save);
+      &::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: rgba(map-get($colors, border), 0.1);
+        border-radius: 2px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: rgba(map-get($colors, primary), 0.3);
+        border-radius: 2px;
+        transition: background 0.3s ease;
 
         &:hover {
-          background-color: map-get($colors, save-hover);
-          transform: scale(0.9);
+          background: rgba(map-get($colors, primary), 0.5);
+        }
+      }
+
+      .layer-item {
+        padding: map-get($spacing, md) map-get($spacing, lg);
+        border-radius: map-get($border-radius, lg);
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(map-get($colors, border), 0.2);
+        margin-bottom: map-get($spacing, md);
+        display: flex;
+        align-items: center;
+        gap: map-get($spacing, md);
+        flex-shrink: 0;
+        transform-origin: center;
+        background: rgba(255, 255, 255, 0.02);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+
+        &::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(map-get($colors, primary), 0.1),
+            transparent
+          );
+          transition: left 0.5s ease;
+        }
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        &:hover {
+          background: rgba(map-get($colors, primary), 0.08);
+          border-color: rgba(map-get($colors, primary), 0.3);
+          transform: translateX(4px);
+          box-shadow: 0 4px 15px rgba(map-get($colors, primary), 0.15);
+
+          &::before {
+            left: 100%;
+          }
+        }
+
+        &.selected {
+          background: linear-gradient(
+            135deg,
+            rgba(map-get($colors, primary), 0.2),
+            rgba(map-get($colors, primary), 0.1)
+          );
+          border-color: map-get($colors, primary);
+          color: map-get($colors, primary);
+          transform: translateX(6px);
+          box-shadow: 0 4px 15px rgba(map-get($colors, primary), 0.2);
+        }
+
+        .layer-icon {
+          flex-shrink: 0;
+          font-size: 1.1rem;
+          opacity: 0.8;
+          transition: all 0.3s ease;
+        }
+
+        .layer-name {
+          flex: 1;
+          font-weight: 600;
+          transition: all 0.3s ease;
+        }
+
+        &:hover {
+          .layer-icon {
+            opacity: 1;
+            transform: scale(1.1);
+          }
+
+          .layer-name {
+            color: map-get($colors, primary);
+          }
+        }
+      }
+    }
+  }
+}
+
+#canvas-section {
+  flex: 1;
+  background: #2c2c2c;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  min-height: 0;
+
+  .canvas-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #2c2c2c;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(
+        circle at 1px 1px,
+        rgba(255, 255, 255, 0.08) 1px,
+        transparent 0
+      );
+      background-size: 20px 20px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .canvas {
+      background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+      border-radius: 12px;
+      box-shadow:
+        0 0 0 1px rgba(0, 102, 255, 0.1),
+        0 10px 40px rgba(0, 0, 0, 0.1),
+        0 20px 80px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      position: relative;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+      &:hover {
+        box-shadow:
+          0 0 0 1px rgba(0, 102, 255, 0.2),
+          0 15px 50px rgba(0, 0, 0, 0.15),
+          0 25px 100px rgba(0, 0, 0, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      }
+
+      &::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border: 1px solid rgba(0, 102, 255, 0.1);
+        border-radius: 12px;
+        pointer-events: none;
+        z-index: 1001;
+      }
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background:
+          linear-gradient(90deg, rgba(0, 102, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(rgba(0, 102, 255, 0.03) 1px, transparent 1px);
+        background-size: 20px 20px;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.7;
+        transition: opacity 0.3s ease;
+      }
+
+      &:hover::before {
+        opacity: 1;
+      }
+
+      .canvas-content {
+        min-width: 100%;
+        min-height: 100%;
+        width: auto;
+        height: auto;
+        position: relative;
+      }
+
+      .path-point,
+      .path-line {
+        pointer-events: auto;
+        transition: filter 0.2s ease;
+        cursor: pointer;
+
+        &:hover {
+          filter: drop-shadow(0 0 3px rgba(0, 102, 255, 0.5)) brightness(1.1);
+        }
+      }
+
+      .path-selected {
+        filter: drop-shadow(0 0 4px #0d99ff) brightness(1.2) !important;
+      }
+
+      .canvas-placeholder {
+        @include flex-center;
+        height: 100%;
+        width: 100%;
+        color: #8c8c8c;
+        position: relative;
+
+        .placeholder-content {
+          text-align: center;
+
+          .placeholder-icon {
+            font-size: 2.5rem;
+            margin-bottom: map-get($spacing, md);
+            opacity: 0.5;
+          }
+
+          p {
+            font-size: 0.9rem;
+            font-weight: 400;
+            opacity: 0.7;
+            color: #8c8c8c;
+          }
         }
       }
     }
   }
 
+  .bottom-toolbar {
+    position: fixed;
+    bottom: 8.2%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    @include flex-between;
+    @include glass-effect;
+    border-radius: 16px;
+    padding: 12px 20px;
+    color: white;
+    @include smooth-shadow(lg);
+    will-change: transform;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+      transform: translateX(-50%) translateY(-4px);
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .toolbar-left {
+      @include flex-center;
+      gap: 4px;
+
+      .tool-btn {
+        @include button-base;
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        color: rgba(255, 255, 255, 0.7);
+        @include flex-center;
+        font-size: 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: background-color, color, transform;
+        position: relative;
+        overflow: hidden;
+
+        backface-visibility: hidden;
+        transform: translateZ(0);
+
+        &::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.1),
+            transparent
+          );
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.2);
+          color: white;
+          transform: translateZ(0) scale(1.1);
+          border-color: rgba(255, 255, 255, 0.4);
+          @include smooth-shadow(md);
+
+          &::before {
+            opacity: 1;
+          }
+        }
+
+        &.active {
+          @include gradient-bg(
+            map-get($colors, primary),
+            map-get($colors, primary-hover)
+          );
+          color: white;
+          transform: translateZ(0) scale(1.05);
+          border-color: map-get($colors, primary-light);
+          @include smooth-shadow(md);
+        }
+
+        .tool-icon {
+          font-size: 14px;
+          font-weight: 500;
+          transition: inherit;
+        }
+      }
+    }
+
+    .toolbar-right {
+      .canvas-info {
+        font-size: 12px;
+        color: #b3b3b3;
+        font-weight: 400;
+        margin-left: 12px;
+      }
+    }
+  }
+}
+
+#right-section {
+  width: clamp(280px, 20vw, 320px);
+  background: linear-gradient(
+    180deg,
+    map-get($colors, bg-primary) 0%,
+    rgba(map-get($colors, bg-primary), 0.95) 100%
+  );
+  color: map-get($colors, text-primary);
+  border-left: 1px solid rgba(map-get($colors, border), 0.6);
+  overflow: hidden;
+  position: relative;
+  backdrop-filter: blur(10px);
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      225deg,
+      rgba(map-get($colors, primary), 0.02) 0%,
+      transparent 50%
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .sidebar-tabs {
+    @include flex-center;
+    background: linear-gradient(
+      135deg,
+      rgba(map-get($colors, primary), 0.1),
+      rgba(map-get($colors, accent), 0.05)
+    );
+    border-bottom: 1px solid rgba(map-get($colors, primary), 0.2);
+    padding: map-get($spacing, xl) map-get($spacing, lg);
+    position: relative;
+    z-index: 2;
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        map-get($colors, primary),
+        transparent
+      );
+      opacity: 0.6;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      background: linear-gradient(
+        135deg,
+        map-get($colors, primary),
+        map-get($colors, accent)
+      );
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 20px rgba(map-get($colors, primary), 0.3);
+      letter-spacing: 0.5px;
+    }
+  }
+
+  .tab-content {
+    height: calc(100% - 80px);
+    overflow-y: auto;
+    position: relative;
+    z-index: 2;
+    padding-bottom: 180px;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: rgba(map-get($colors, border), 0.1);
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(map-get($colors, primary), 0.3);
+      border-radius: 3px;
+      transition: background 0.3s ease;
+
+      &:hover {
+        background: rgba(map-get($colors, primary), 0.5);
+      }
+    }
+
+    .sidebar-section {
+      padding: map-get($spacing, xl) map-get($spacing, lg);
+      border-bottom: 1px solid rgba(map-get($colors, border), 0.2);
+      background: rgba(255, 255, 255, 0.01);
+      margin-bottom: map-get($spacing, sm);
+      border-radius: map-get($border-radius, lg);
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(map-get($colors, primary), 0.02),
+          transparent
+        );
+        pointer-events: none;
+      }
+
+      .section-header {
+        padding-bottom: map-get($spacing, lg);
+        border-bottom: 1px solid rgba(map-get($colors, primary), 0.15);
+        margin-bottom: map-get($spacing, xl);
+        position: relative;
+
+        &::after {
+          content: "";
+          position: absolute;
+          bottom: -1px;
+          left: 0;
+          width: 40%;
+          height: 1px;
+          background: linear-gradient(
+            90deg,
+            map-get($colors, primary),
+            transparent
+          );
+          opacity: 0.6;
+        }
+
+        h3 {
+          font-weight: 700;
+          font-size: 0.9rem;
+          color: map-get($colors, text-primary);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          text-shadow: 0 0 10px rgba(map-get($colors, primary), 0.2);
+        }
+      }
+
+      .properties-panel {
+        .property-group {
+          margin-bottom: map-get($spacing, xl);
+          display: flex;
+          flex-direction: column;
+          gap: map-get($spacing, sm);
+          position: relative;
+
+          label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: map-get($colors, text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: map-get($spacing, xs);
+          }
+
+          input {
+            width: 100%;
+            height: 40px;
+            color: map-get($colors, text-primary);
+            background: rgba(map-get($colors, bg-tertiary), 0.8);
+            border-radius: map-get($border-radius, lg);
+            border: 1px solid rgba(map-get($colors, border), 0.3);
+            padding: map-get($spacing, sm) map-get($spacing, md);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.9rem;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+
+            &:hover {
+              border-color: rgba(map-get($colors, primary), 0.5);
+              background: rgba(map-get($colors, bg-tertiary), 0.9);
+              transform: translateY(-1px);
+              box-shadow: 0 4px 15px rgba(map-get($colors, primary), 0.1);
+            }
+
+            &:focus {
+              outline: none;
+              border-color: map-get($colors, primary);
+              background: rgba(map-get($colors, bg-tertiary), 1);
+              box-shadow: 0 0 0 3px rgba(map-get($colors, primary), 0.1);
+              transform: translateY(-2px);
+            }
+
+            &[type="number"] {
+              -moz-appearance: textfield;
+
+              &::-webkit-outer-spin-button,
+              &::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+              }
+            }
+
+            &[type="color"] {
+              cursor: pointer;
+              padding: map-get($spacing, xs);
+              height: 45px;
+              border-radius: map-get($border-radius, lg);
+
+              &::-webkit-color-swatch-wrapper {
+                padding: 0;
+              }
+
+              &::-webkit-color-swatch {
+                border: none;
+                border-radius: map-get($border-radius, md);
+              }
+            }
+          }
+
+          .color-input-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: map-get($spacing, sm);
+
+            .color-hex,
+            .border-color-hex {
+              font-size: 0.8rem;
+              color: map-get($colors, text-secondary);
+              font-family: "Courier New", monospace;
+              background: rgba(map-get($colors, bg-tertiary), 0.5);
+              padding: map-get($spacing, xs) map-get($spacing, sm);
+              border-radius: map-get($border-radius, md);
+              text-align: center;
+              border: 1px solid rgba(map-get($colors, border), 0.2);
+            }
+          }
+        }
+
+        #textContentGroup {
+          margin-top: map-get($spacing, lg);
+          padding-top: map-get($spacing, lg);
+          border-top: 1px solid rgba(map-get($colors, border), 0.2);
+        }
+      }
+
+      &:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  .export-section-fixed {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(map-get($colors, bg-primary), 0.95) 0%,
+      map-get($colors, bg-primary) 100%
+    );
+    border-top: 1px solid rgba(map-get($colors, primary), 0.2);
+    padding: map-get($spacing, xl) map-get($spacing, lg);
+    backdrop-filter: blur(15px);
+    z-index: 10;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: -1px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        map-get($colors, primary),
+        transparent
+      );
+      opacity: 0.6;
+    }
+
+    .section-header {
+      padding-bottom: map-get($spacing, lg);
+      border-bottom: 1px solid rgba(map-get($colors, primary), 0.15);
+      margin-bottom: map-get($spacing, xl);
+      position: relative;
+
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 40%;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          map-get($colors, primary),
+          transparent
+        );
+        opacity: 0.6;
+      }
+
+      h3 {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: map-get($colors, text-primary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 0 0 10px rgba(map-get($colors, primary), 0.2);
+      }
+    }
+
+    .export-controls {
+      display: flex;
+      flex-direction: column;
+      gap: map-get($spacing, lg);
+
+      .export-btn {
+        @include button-base;
+        width: 100%;
+        height: 45px;
+        color: map-get($colors, text-primary);
+        background: linear-gradient(
+          135deg,
+          rgba(map-get($colors, primary), 0.1),
+          rgba(map-get($colors, accent), 0.05)
+        );
+        border-radius: map-get($border-radius, lg);
+        border: 1px solid rgba(map-get($colors, primary), 0.2);
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: map-get($spacing, sm);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+
+        &::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(map-get($colors, primary), 0.1),
+            transparent
+          );
+          transition: left 0.5s ease;
+        }
+
+        .export-icon {
+          font-size: 1.1rem;
+          opacity: 0.8;
+          transition: all 0.3s ease;
+        }
+
+        &:hover {
+          border-color: map-get($colors, primary);
+          background: linear-gradient(
+            135deg,
+            rgba(map-get($colors, primary), 0.2),
+            rgba(map-get($colors, accent), 0.1)
+          );
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(map-get($colors, primary), 0.2);
+          color: map-get($colors, primary);
+
+          &::before {
+            left: 100%;
+          }
+
+          .export-icon {
+            opacity: 1;
+            transform: scale(1.1);
+          }
+        }
+
+        &:active {
+          transform: translateY(0);
+          box-shadow: 0 4px 15px rgba(map-get($colors, primary), 0.15);
+        }
+      }
+    }
+  }
+}
+
+.status-bar {
+  @include flex-between;
+  margin-bottom: 0%;
+  padding: map-get($spacing, sm);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+
+  background-color: map-get($colors, bg-secondary);
+  color: map-get($colors, text-primary);
+  border-top: 2px solid map-get($colors, border);
+
+  #status-left {
+    @include flex-center;
+    padding-left: map-get($spacing, xs);
+    gap: map-get($spacing, xl);
+    font-size: 0.8rem;
+    color: map-get($colors, text-secondary);
+  }
+
+  .devinfo {
+    @include flex-center;
+    gap: 0.5rem;
+
+    #tag {
+      a {
+        font-size: 18px;
+        opacity: 0.7;
+        color: white;
+        font-size: 20px;
+        margin: 0 8px;
+        text-decoration: none;
+
+        &:hover {
+          color: #58a6ff;
+        }
+      }
+    }
+
+    .name {
+      h5 {
+        font-weight: 400 !important;
+        opacity: 0.9;
+      }
+    }
+  }
+
+  #status-right {
+    padding-right: map-get($spacing, xs);
+
+    #status-btn {
+      @include button-base;
+      padding: map-get($spacing, sm) map-get($spacing, xl);
+      border: none;
+      border-radius: map-get($border-radius, lg);
+      background-color: map-get($colors, save);
+
+      &:hover {
+        background-color: map-get($colors, save-hover);
+        transform: scale(0.9);
+      }
+    }
+  }
+}

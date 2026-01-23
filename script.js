@@ -1,16 +1,24 @@
+// Figma-Style Design Tool - Main Application
 (function () {
   "use strict";
 
+  // Main application state - stores all elements, current tool, zoom level, etc.
   const AppState = {
     elements: [],
     selectedElement: null,
     elementCounter: 0,
+    zIndexCounter: 0,
     zoomLevel: 1,
     currentTool: "select",
     isDragging: false,
     isResizing: false,
     isRotating: false,
+    isPanning: false,
+    isDrawing: false,
     dragOffset: { x: 0, y: 0 },
+    panOffset: { x: 0, y: 0 },
+    panStart: { x: 0, y: 0 },
+    currentPath: null,
     resizeHandle: null,
     rotationStartAngle: 0,
     pages: [
@@ -25,14 +33,18 @@
     canvas: {
       width: 1200,
       height: 800,
-      minElementSize: 20,
+      minElementSize: 0,
       boundary: 5,
     },
     tools: {
       select: "Select Tool",
+      pan: "Pan Tool",
+      pen: "Pen Tool",
+      eraser: "Eraser Tool",
       rectangle: "Rectangle",
       circle: "Circle",
       triangle: "Triangle",
+      star: "Star",
       line: "Line",
       text: "Text Box",
     },
@@ -40,6 +52,7 @@
       rectangle: { width: 120, height: 80 },
       circle: { width: 100, height: 100 },
       triangle: { width: 100, height: 80 },
+      star: { width: 100, height: 100 },
       line: { width: 150, height: 2 },
       text: { width: 120, height: 40 },
     },
@@ -48,10 +61,464 @@
       min: 0.25,
       max: 3,
     },
+    // History management for undo/redo
+    history: {
+      states: [],
+      currentIndex: -1,
+      maxStates: 50,
+    },
   };
 
-  const Utils = {
+  // History management system for undo/redo functionality
+  const HistoryManager = {
+    saveState: function () {
+      // Create a deep copy of current state
+      const currentState = {
+        elements: JSON.parse(JSON.stringify(AppState.elements)),
+        elementCounter: AppState.elementCounter,
+        selectedElementId: AppState.selectedElement
+          ? AppState.selectedElement.id
+          : null,
+        timestamp: Date.now(),
+      };
 
+      // Remove states after current index (when user made changes after undo)
+      AppState.history.states = AppState.history.states.slice(
+        0,
+        AppState.history.currentIndex + 1,
+      );
+
+      // Add new state
+      AppState.history.states.push(currentState);
+      AppState.history.currentIndex++;
+
+      // Limit history size
+      if (AppState.history.states.length > AppState.history.maxStates) {
+        AppState.history.states.shift();
+        AppState.history.currentIndex--;
+      }
+
+      this.updateUndoRedoButtons();
+    },
+
+    undo: function () {
+      if (!this.canUndo()) return;
+
+      AppState.history.currentIndex--;
+      this.restoreState();
+      this.updateUndoRedoButtons();
+    },
+
+    redo: function () {
+      if (!this.canRedo()) return;
+
+      AppState.history.currentIndex++;
+      this.restoreState();
+      this.updateUndoRedoButtons();
+    },
+
+    canUndo: function () {
+      return AppState.history.currentIndex > 0;
+    },
+
+    canRedo: function () {
+      return AppState.history.currentIndex < AppState.history.states.length - 1;
+    },
+
+    restoreState: function () {
+      const state = AppState.history.states[AppState.history.currentIndex];
+      if (!state) return;
+
+      // Clear current canvas
+      CanvasManager.clearCanvas();
+
+      // Restore elements
+      AppState.elements = JSON.parse(JSON.stringify(state.elements));
+      AppState.elementCounter = state.elementCounter;
+
+      // Re-render all elements
+      AppState.elements.forEach((element) => {
+        ElementRenderer.renderElement(element);
+      });
+
+      // Restore selection
+      if (state.selectedElementId) {
+        const selectedElement = AppState.elements.find(
+          (el) => el.id === state.selectedElementId,
+        );
+        if (selectedElement) {
+          ElementManager.selectElement(selectedElement);
+        } else {
+          ElementManager.deselectElement();
+        }
+      } else {
+        ElementManager.deselectElement();
+      }
+
+      // Update UI
+      LayerManager.updateLayersPanel();
+      UIManager.updateElementCount();
+
+      if (AppState.elements.length === 0) {
+        UIManager.showCanvasPlaceholder();
+      } else {
+        UIManager.hideCanvasPlaceholder();
+      }
+    },
+
+    updateUndoRedoButtons: function () {
+      const undoBtn = document.getElementById("undoBtn");
+      const redoBtn = document.getElementById("redoBtn");
+
+      if (undoBtn) {
+        undoBtn.disabled = !this.canUndo();
+        undoBtn.style.opacity = this.canUndo() ? "1" : "0.4";
+      }
+
+      if (redoBtn) {
+        redoBtn.disabled = !this.canRedo();
+        redoBtn.style.opacity = this.canRedo() ? "1" : "0.4";
+      }
+    },
+
+    initialize: function () {
+      // Save initial state
+      this.saveState();
+      this.updateUndoRedoButtons();
+    },
+  };
+
+  // Drawing manager for pen tool and eraser functionality
+  const DrawingManager = {
+    startDrawing: function (e) {
+      if (AppState.currentTool !== "pen") return;
+
+      AppState.isDrawing = true;
+      const mousePos = Utils.getCanvasMousePosition(e);
+
+      // Create new path element with highest z-index using pure DOM approach
+      const maxZIndex = ++AppState.zIndexCounter;
+      const pathElement = {
+        id: Utils.generateElementId(),
+        type: "path",
+        points: [{ x: mousePos.x, y: mousePos.y }],
+        x: mousePos.x,
+        y: mousePos.y,
+        width: 2,
+        height: 2,
+        rotation: 0,
+        backgroundColor: "#3b82f6",
+        borderColor: "#000000",
+        borderWidth: 2,
+        strokeWidth: 2,
+        zIndex: maxZIndex,
+        pathDivs: [], // Store individual div elements for the path
+      };
+
+      AppState.currentPath = pathElement;
+      AppState.elements.push(pathElement);
+
+      // Create first point as a small div
+      this.addPathPoint(pathElement, mousePos.x, mousePos.y);
+
+      UIManager.hideCanvasPlaceholder();
+    },
+
+    startErasing: function (e) {
+      if (AppState.currentTool !== "eraser") return;
+
+      AppState.isDrawing = true;
+      const mousePos = Utils.getCanvasMousePosition(e);
+
+      // Start erasing at current position
+      this.eraseAtPosition(mousePos.x, mousePos.y);
+    },
+
+    continueDrawing: function (e) {
+      if (!AppState.isDrawing) return;
+
+      if (AppState.currentTool === "pen" && AppState.currentPath) {
+        this.continuePenDrawing(e);
+      } else if (AppState.currentTool === "eraser") {
+        this.continueErasing(e);
+      }
+    },
+
+    continuePenDrawing: function (e) {
+      const mousePos = Utils.getCanvasMousePosition(e);
+      const lastPoint =
+        AppState.currentPath.points[AppState.currentPath.points.length - 1];
+
+      // Only add point if it's far enough from last point (smooth drawing)
+      const distance = Math.sqrt(
+        Math.pow(mousePos.x - lastPoint.x, 2) +
+          Math.pow(mousePos.y - lastPoint.y, 2),
+      );
+
+      if (distance > 3) {
+        AppState.currentPath.points.push({ x: mousePos.x, y: mousePos.y });
+
+        // Add visual connection between points using div elements
+        this.addPathPoint(AppState.currentPath, mousePos.x, mousePos.y);
+        this.connectPoints(AppState.currentPath, lastPoint, {
+          x: mousePos.x,
+          y: mousePos.y,
+        });
+
+        // Update bounding box
+        this.updatePathBounds(AppState.currentPath);
+      }
+    },
+
+    continueErasing: function (e) {
+      const mousePos = Utils.getCanvasMousePosition(e);
+      this.eraseAtPosition(mousePos.x, mousePos.y);
+    },
+
+    finishDrawing: function () {
+      if (!AppState.isDrawing) return;
+
+      AppState.isDrawing = false;
+
+      if (AppState.currentTool === "pen" && AppState.currentPath) {
+        this.finishPenDrawing();
+      } else if (AppState.currentTool === "eraser") {
+        this.finishErasing();
+      }
+    },
+
+    finishPenDrawing: function () {
+      // Finalize the path
+      if (AppState.currentPath.points.length < 3) {
+        // Remove path if too short
+        this.removePathElements(AppState.currentPath);
+        AppState.elements = AppState.elements.filter(
+          (el) => el.id !== AppState.currentPath.id,
+        );
+      } else {
+        // Select the completed path
+        ElementManager.selectElement(AppState.currentPath);
+        LayerManager.updateLayersPanel();
+        UIManager.updateElementCount();
+
+        // Auto-switch to select tool after drawing
+        ToolManager.selectTool("select");
+
+        // Save state for undo/redo
+        HistoryManager.saveState();
+      }
+
+      AppState.currentPath = null;
+    },
+
+    finishErasing: function () {
+      // Save state after erasing
+      HistoryManager.saveState();
+      LayerManager.updateLayersPanel();
+      UIManager.updateElementCount();
+
+      // Check if canvas is empty
+      if (AppState.elements.length === 0) {
+        UIManager.showCanvasPlaceholder();
+      }
+    },
+
+    eraseAtPosition: function (x, y) {
+      const eraseRadius = 15; // Increased eraser size for better usability
+      const elementsToRemove = [];
+
+      // Check all path elements for collision with eraser
+      AppState.elements.forEach((element) => {
+        if (element.type === "path" && element.pathDivs) {
+          const divsToRemove = [];
+
+          // Check each path div for collision
+          element.pathDivs.forEach((div, index) => {
+            const divRect = div.getBoundingClientRect();
+            const canvas = document.getElementById("canvas");
+            const canvasRect = canvas.getBoundingClientRect();
+
+            // Convert div position to canvas coordinates
+            const divX = (divRect.left - canvasRect.left) / AppState.zoomLevel;
+            const divY = (divRect.top - canvasRect.top) / AppState.zoomLevel;
+
+            // Check if eraser overlaps with this div
+            const distance = Math.sqrt(
+              Math.pow(x - divX, 2) + Math.pow(y - divY, 2),
+            );
+
+            if (distance <= eraseRadius) {
+              divsToRemove.push({ div, index });
+            }
+          });
+
+          // Remove colliding divs with visual feedback
+          divsToRemove.forEach(({ div, index }) => {
+            // Add erasing animation
+            div.style.transition = "opacity 0.1s ease-out";
+            div.style.opacity = "0";
+
+            setTimeout(() => {
+              if (div.parentNode) {
+                div.parentNode.removeChild(div);
+              }
+            }, 100);
+
+            element.pathDivs.splice(element.pathDivs.indexOf(div), 1);
+
+            // Also remove corresponding point
+            if (element.points && element.points[index]) {
+              element.points.splice(index, 1);
+            }
+          });
+
+          // If path has too few elements left, mark for complete removal
+          if (element.pathDivs.length < 2 || element.points.length < 2) {
+            elementsToRemove.push(element);
+          } else {
+            // Update path bounds
+            this.updatePathBounds(element);
+          }
+        }
+      });
+
+      // Remove completely erased paths
+      elementsToRemove.forEach((element) => {
+        this.removePathElements(element);
+        AppState.elements = AppState.elements.filter(
+          (el) => el.id !== element.id,
+        );
+
+        // If this was the selected element, deselect it
+        if (
+          AppState.selectedElement &&
+          AppState.selectedElement.id === element.id
+        ) {
+          ElementManager.deselectElement();
+        }
+      });
+    },
+
+    addPathPoint: function (pathElement, x, y) {
+      const canvas = document.getElementById("canvas");
+      if (!canvas) return;
+
+      // Create a small div for each point
+      const pointDiv = document.createElement("div");
+      pointDiv.className = "path-point";
+      pointDiv.style.cssText = `
+        position: absolute;
+        left: ${x - 1}px;
+        top: ${y - 1}px;
+        width: ${pathElement.strokeWidth}px;
+        height: ${pathElement.strokeWidth}px;
+        background-color: ${pathElement.backgroundColor};
+        border-radius: 50%;
+        pointer-events: auto;
+        cursor: pointer;
+        z-index: ${pathElement.zIndex};
+      `;
+
+      canvas.appendChild(pointDiv);
+
+      // Store reference to the div
+      if (!pathElement.pathDivs) pathElement.pathDivs = [];
+      pathElement.pathDivs.push(pointDiv);
+    },
+
+    connectPoints: function (pathElement, point1, point2) {
+      const canvas = document.getElementById("canvas");
+      if (!canvas) return;
+
+      // Calculate line properties
+      const deltaX = point2.x - point1.x;
+      const deltaY = point2.y - point1.y;
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+
+      // Create a div to represent the line between points
+      const lineDiv = document.createElement("div");
+      lineDiv.className = "path-line";
+      lineDiv.style.cssText = `
+        position: absolute;
+        left: ${point1.x}px;
+        top: ${point1.y - pathElement.strokeWidth / 2}px;
+        width: ${distance}px;
+        height: ${pathElement.strokeWidth}px;
+        background-color: ${pathElement.backgroundColor};
+        transform-origin: 0 50%;
+        transform: rotate(${angle}deg);
+        pointer-events: auto;
+        cursor: pointer;
+        z-index: ${pathElement.zIndex};
+      `;
+
+      canvas.appendChild(lineDiv);
+
+      // Store reference to the div
+      if (!pathElement.pathDivs) pathElement.pathDivs = [];
+      pathElement.pathDivs.push(lineDiv);
+    },
+
+    removePathElements: function (pathElement) {
+      if (pathElement.pathDivs) {
+        pathElement.pathDivs.forEach((div) => {
+          if (div.parentNode) {
+            div.parentNode.removeChild(div);
+          }
+        });
+        pathElement.pathDivs = [];
+      }
+    },
+
+    updatePathElement: function (pathElement) {
+      // Remove existing path elements
+      this.removePathElements(pathElement);
+
+      // Recreate path with updated properties
+      if (pathElement.points && pathElement.points.length > 0) {
+        // Add all points
+        pathElement.points.forEach((point) => {
+          this.addPathPoint(pathElement, point.x, point.y);
+        });
+
+        // Connect consecutive points
+        for (let i = 1; i < pathElement.points.length; i++) {
+          this.connectPoints(
+            pathElement,
+            pathElement.points[i - 1],
+            pathElement.points[i],
+          );
+        }
+      }
+    },
+
+    updatePathBounds: function (pathElement) {
+      if (pathElement.points.length === 0) return;
+
+      let minX = pathElement.points[0].x;
+      let maxX = pathElement.points[0].x;
+      let minY = pathElement.points[0].y;
+      let maxY = pathElement.points[0].y;
+
+      pathElement.points.forEach((point) => {
+        minX = Math.min(minX, point.x);
+        maxX = Math.max(maxX, point.x);
+        minY = Math.min(minY, point.y);
+        maxY = Math.max(maxY, point.y);
+      });
+
+      // Add some padding for stroke width
+      const padding = (pathElement.strokeWidth || 2) / 2;
+      pathElement.x = minX - padding;
+      pathElement.y = minY - padding;
+      pathElement.width = maxX - minX + padding * 2;
+      pathElement.height = maxY - minY + padding * 2;
+    },
+  };
+
+  // Utility functions for calculations and element management
+  const Utils = {
     clamp: function (value, min, max) {
       return Math.max(min, Math.min(value, max));
     },
@@ -87,8 +554,8 @@
     },
   };
 
+  // Page management system for multiple design pages
   const PageManager = {
-
     addNewPage: function () {
       const newPageNumber = AppState.pages.length + 1;
       const newPage = {
@@ -115,6 +582,7 @@
       if (AppState.currentPageIndex >= pageIndex) {
         AppState.currentPageIndex = Math.max(0, AppState.currentPageIndex - 1);
       }
+      this.updatePagesPanel(); // Add this line to update the UI
       this.switchToPage(AppState.currentPageIndex);
     },
 
@@ -125,13 +593,17 @@
 
       if (AppState.pages[AppState.currentPageIndex]) {
         AppState.pages[AppState.currentPageIndex].elements = AppState.elements;
-        AppState.pages[AppState.currentPageIndex].elementCounter = AppState.elementCounter;
+        AppState.pages[AppState.currentPageIndex].elementCounter =
+          AppState.elementCounter;
       }
 
       AppState.currentPageIndex = pageIndex;
-      AppState.elements = [...AppState.pages[AppState.currentPageIndex].elements];
-      AppState.elementCounter = AppState.pages[AppState.currentPageIndex].elementCounter;
-      
+      AppState.elements = [
+        ...AppState.pages[AppState.currentPageIndex].elements,
+      ];
+      AppState.elementCounter =
+        AppState.pages[AppState.currentPageIndex].elementCounter;
+
       requestAnimationFrame(() => {
         CanvasManager.clearCanvas();
 
@@ -140,7 +612,7 @@
           const elementDiv = this.createElementDiv(element);
           fragment.appendChild(elementDiv);
         });
-        
+
         const canvas = document.getElementById("canvas");
         if (canvas) {
           canvas.appendChild(fragment);
@@ -151,7 +623,7 @@
         LayerManager.updateLayersPanel();
         UIManager.updateElementCount();
         PropertiesPanel.clearPropertiesPanel();
-        
+
         if (AppState.elements.length === 0) {
           UIManager.showCanvasPlaceholder();
         } else {
@@ -161,6 +633,12 @@
     },
 
     createElementDiv: function (element) {
+      if (element.type === "path") {
+        // Path elements need special handling with DOM elements
+        DrawingManager.updatePathElement(element);
+        return null; // Return null since path is handled differently
+      }
+
       const div = document.createElement("div");
       div.id = element.id;
       div.className = "canvas-element";
@@ -170,7 +648,6 @@
         left: ${element.x}px;
         top: ${element.y}px;
         cursor: pointer;
-        border: 2px solid transparent;
         box-sizing: border-box;
         display: flex;
         align-items: center;
@@ -191,45 +668,43 @@
       if (!pagesList) return;
 
       const fragment = document.createDocumentFragment();
-      
+
       AppState.pages.forEach((page, index) => {
         const pageItem = document.createElement("div");
         pageItem.className = "page-item";
-        
+
         if (index === AppState.currentPageIndex) {
           pageItem.classList.add("active");
         }
-        
+
         const pageContent = document.createElement("div");
         pageContent.className = "page-content";
         pageContent.innerHTML = `📄 ${page.name}`;
         pageContent.dataset.pageIndex = index;
-        
+
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "page-delete-btn";
         deleteBtn.innerHTML = "×";
         deleteBtn.title = "Delete page";
         deleteBtn.dataset.pageIndex = index;
         deleteBtn.dataset.action = "delete-page";
-        
 
         if (AppState.pages.length <= 1) {
           deleteBtn.style.display = "none";
         }
-        
+
         pageItem.appendChild(pageContent);
         pageItem.appendChild(deleteBtn);
         fragment.appendChild(pageItem);
       });
-      
 
       pagesList.innerHTML = "";
       pagesList.appendChild(fragment);
     },
   };
 
+  // Canvas management for handling canvas interactions and transformations
   const CanvasManager = {
-
     clearCanvas: function () {
       const canvas = document.getElementById("canvas");
       if (!canvas) return;
@@ -240,9 +715,24 @@
     handleCanvasClick: function (e) {
       if (AppState.currentTool === "select") {
         ElementManager.handleSelection(e);
+      } else if (AppState.currentTool === "pan") {
+        // Pan tool doesn't create elements on click
+        return;
+      } else if (AppState.currentTool === "pen") {
+        // Pen tool handles drawing in mouse events
+        return;
       } else {
         ElementCreator.createElement(e);
       }
+    },
+
+    applyPanTransform: function () {
+      const canvas = document.getElementById("canvas");
+      if (!canvas) return;
+
+      const currentTransform = `scale(${AppState.zoomLevel}) translate(${AppState.panOffset.x}px, ${AppState.panOffset.y}px)`;
+      canvas.style.transform = currentTransform;
+      canvas.style.transformOrigin = "0 0";
     },
 
     handleCanvasDoubleClick: function (e) {
@@ -260,8 +750,8 @@
     },
   };
 
+  // Element creation system for shapes and text
   const ElementCreator = {
-    
     createElement: function (e) {
       const mousePos = Utils.getCanvasMousePosition(e);
       const dimensions =
@@ -289,8 +779,10 @@
         height: dimensions.height,
         rotation: 0,
         backgroundColor: "#3b82f6",
+        borderColor: "#000000",
+        borderWidth: 0,
         textContent: AppState.currentTool === "text" ? "Text" : "",
-        zIndex: AppState.elements.length,
+        zIndex: ++AppState.zIndexCounter,
       };
 
       AppState.elements.push(element);
@@ -299,14 +791,27 @@
       LayerManager.updateLayersPanel();
       UIManager.updateElementCount();
       UIManager.hideCanvasPlaceholder();
+
+      // Auto-switch to select tool after creating element
+      ToolManager.selectTool("select");
+
+      // Save state for undo/redo
+      HistoryManager.saveState();
     },
   };
 
+  // Element rendering system for displaying shapes on canvas
   const ElementRenderer = {
-
     renderElement: function (element) {
       const canvas = document.getElementById("canvas");
       if (!canvas) return;
+
+      if (element.type === "path") {
+        // Path elements are handled differently with pure DOM elements
+        DrawingManager.updatePathElement(element);
+        return;
+      }
+
       const div = document.createElement("div");
       div.id = element.id;
       div.className = "canvas-element";
@@ -316,7 +821,6 @@
                 left: ${element.x}px;
                 top: ${element.y}px;
                 cursor: pointer;
-                border: 2px solid transparent;
                 box-sizing: border-box;
                 display: flex;
                 align-items: center;
@@ -343,6 +847,9 @@
         case "triangle":
           this.styleTriangle(div, element);
           break;
+        case "star":
+          this.styleStar(div, element);
+          break;
         case "line":
           this.styleLine(div, element);
           break;
@@ -356,23 +863,34 @@
       div.style.width = element.width + "px";
       div.style.height = element.height + "px";
       div.style.backgroundColor = element.backgroundColor;
+      div.style.border = `${element.borderWidth || 0}px solid ${element.borderColor || "#000000"}`;
     },
 
     styleCircle: function (div, element) {
       div.style.width = element.width + "px";
-      div.style.height = element.width + "px";
+      div.style.height = element.height + "px"; // Use actual height instead of width
       div.style.backgroundColor = element.backgroundColor;
       div.style.borderRadius = "50%";
+      div.style.border = `${element.borderWidth || 0}px solid ${element.borderColor || "#000000"}`;
     },
 
     styleTriangle: function (div, element) {
-      div.style.width = "0";
-      div.style.height = "0";
-      div.style.backgroundColor = "transparent";
-      div.style.borderLeft = `${element.width / 2}px solid transparent`;
-      div.style.borderRight = `${element.width / 2}px solid transparent`;
-      div.style.borderBottom = `${element.height}px solid ${element.backgroundColor}`;
-      div.style.borderTop = "none";
+      div.style.width = element.width + "px";
+      div.style.height = element.height + "px";
+      div.style.backgroundColor = element.backgroundColor;
+      div.style.border = `${element.borderWidth || 0}px solid ${element.borderColor || "#000000"}`;
+      // Use clip-path for better triangle shape
+      div.style.clipPath = "polygon(50% 0%, 0% 100%, 100% 100%)";
+    },
+
+    styleStar: function (div, element) {
+      div.style.width = element.width + "px";
+      div.style.height = element.height + "px";
+      div.style.backgroundColor = element.backgroundColor;
+      div.style.border = `${element.borderWidth || 0}px solid ${element.borderColor || "#000000"}`;
+      // Use clip-path for 5-pointed star shape
+      div.style.clipPath =
+        "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)";
     },
 
     styleLine: function (div, element) {
@@ -380,6 +898,7 @@
       div.style.height = "2px";
       div.style.backgroundColor = element.backgroundColor;
       div.style.borderRadius = "1px";
+      div.style.border = `${element.borderWidth || 0}px solid ${element.borderColor || "#000000"}`;
       const arrowHead = document.createElement("div");
       arrowHead.style.cssText = `
                 position: absolute;
@@ -399,12 +918,17 @@
       div.style.height = element.height + "px";
       div.style.backgroundColor = "transparent";
       div.style.color = element.backgroundColor;
-      div.style.border = `1px solid ${element.backgroundColor}`;
+      div.style.border = `${element.borderWidth || 1}px solid ${element.borderColor || element.backgroundColor}`;
       div.style.padding = "4px";
       div.textContent = element.textContent;
     },
 
     updateElementDisplay: function (element) {
+      if (element.type === "path") {
+        DrawingManager.updatePathElement(element);
+        return;
+      }
+
       const elementDiv = document.getElementById(element.id);
       if (!elementDiv) return;
       elementDiv.style.left = element.x + "px";
@@ -417,13 +941,30 @@
     },
   };
 
+  // Element management for selection, deletion, and manipulation
   const ElementManager = {
-
     handleSelection: function (e) {
+      // Check if clicking on a path element (pen drawing)
+      if (
+        e.target.classList.contains("path-point") ||
+        e.target.classList.contains("path-line")
+      ) {
+        // Find the path element this div belongs to
+        const pathElement = AppState.elements.find(
+          (el) =>
+            el.type === "path" && el.pathDivs && el.pathDivs.includes(e.target),
+        );
+        if (pathElement) {
+          this.selectAndBringToFront(pathElement);
+          return;
+        }
+      }
+
+      // Regular element selection
       const target = e.target.closest(".canvas-element");
       if (target) {
         const element = AppState.elements.find((el) => el.id === target.id);
-        this.selectElement(element);
+        this.selectAndBringToFront(element);
       } else {
         this.deselectElement();
       }
@@ -431,25 +972,83 @@
 
     selectElement: function (element) {
       AppState.selectedElement = element;
+
+      // Clear previous selections
       document.querySelectorAll(".canvas-element").forEach((el) => {
-        el.style.border = "2px solid transparent";
+        el.style.outline = "none";
         this.removeResizeHandles(el);
       });
-      const elementDiv = document.getElementById(element.id);
-      if (elementDiv) {
-        elementDiv.style.border = "2px solid #0d99ff";
-        this.addResizeHandles(elementDiv);
+
+      // Clear path selections
+      document.querySelectorAll(".path-point, .path-line").forEach((el) => {
+        el.style.filter = "none";
+      });
+
+      // Highlight selected element
+      if (element.type === "path") {
+        // Highlight path elements
+        if (element.pathDivs) {
+          element.pathDivs.forEach((div) => {
+            div.style.filter = "drop-shadow(0 0 4px #0d99ff) brightness(1.2)";
+          });
+        }
+      } else {
+        const elementDiv = document.getElementById(element.id);
+        if (elementDiv) {
+          elementDiv.style.outline = "2px solid #0d99ff";
+          elementDiv.style.outlineOffset = "2px";
+          this.addResizeHandles(elementDiv);
+        }
       }
+
       PropertiesPanel.updatePropertiesPanel(element);
       LayerManager.updateLayersPanel();
     },
 
+    selectAndBringToFront: function (element) {
+      // Bring selected element to front by updating z-index
+      const maxZIndex = Math.max(...AppState.elements.map((el) => el.zIndex));
+      if (element.zIndex < maxZIndex) {
+        element.zIndex = ++AppState.zIndexCounter;
+
+        // Update the element's z-index in DOM
+        if (element.type === "path") {
+          // Update z-index for all path divs
+          if (element.pathDivs) {
+            element.pathDivs.forEach((div) => {
+              div.style.zIndex = element.zIndex;
+            });
+          }
+        } else {
+          const elementDiv = document.getElementById(element.id);
+          if (elementDiv) {
+            elementDiv.style.zIndex = element.zIndex;
+          }
+        }
+      }
+
+      // Then select the element
+      this.selectElement(element);
+    },
+
     deselectElement: function () {
       if (AppState.selectedElement) {
-        const elementDiv = document.getElementById(AppState.selectedElement.id);
-        if (elementDiv) {
-          elementDiv.style.border = "2px solid transparent";
-          this.removeResizeHandles(elementDiv);
+        if (AppState.selectedElement.type === "path") {
+          // Remove path highlighting
+          if (AppState.selectedElement.pathDivs) {
+            AppState.selectedElement.pathDivs.forEach((div) => {
+              div.style.filter = "none";
+            });
+          }
+        } else {
+          const elementDiv = document.getElementById(
+            AppState.selectedElement.id,
+          );
+          if (elementDiv) {
+            elementDiv.style.outline = "none";
+            elementDiv.style.outlineOffset = "0";
+            this.removeResizeHandles(elementDiv);
+          }
         }
       }
       AppState.selectedElement = null;
@@ -526,8 +1125,15 @@
 
     deleteElement: function () {
       if (!AppState.selectedElement) return;
-      const elementDiv = document.getElementById(AppState.selectedElement.id);
-      if (elementDiv) elementDiv.remove();
+
+      // Special handling for path elements
+      if (AppState.selectedElement.type === "path") {
+        DrawingManager.removePathElements(AppState.selectedElement);
+      } else {
+        const elementDiv = document.getElementById(AppState.selectedElement.id);
+        if (elementDiv) elementDiv.remove();
+      }
+
       AppState.elements = AppState.elements.filter(
         (el) => el.id !== AppState.selectedElement.id,
       );
@@ -538,6 +1144,9 @@
       if (AppState.elements.length === 0) {
         UIManager.showCanvasPlaceholder();
       }
+
+      // Save state for undo/redo
+      HistoryManager.saveState();
     },
 
     moveElement: function (deltaX, deltaY) {
@@ -570,8 +1179,8 @@
     },
   };
 
+  // Mouse interaction handler for drag, resize, rotate operations
   const MouseHandler = {
-
     handleMouseDown: function (e) {
       if (e.target.classList.contains("resize-handle")) {
         AppState.isResizing = true;
@@ -584,6 +1193,26 @@
           AppState.selectedElement,
         );
         e.target.style.cursor = "grabbing";
+        e.preventDefault();
+      } else if (
+        AppState.currentTool === "pen" &&
+        (e.target.id === "canvas" || e.target.closest("#canvas"))
+      ) {
+        DrawingManager.startDrawing(e);
+        e.preventDefault();
+      } else if (
+        AppState.currentTool === "eraser" &&
+        (e.target.id === "canvas" || e.target.closest("#canvas"))
+      ) {
+        DrawingManager.startErasing(e);
+        e.preventDefault();
+      } else if (
+        AppState.currentTool === "pan" &&
+        (e.target.id === "canvas" || e.target.closest("#canvas"))
+      ) {
+        AppState.isPanning = true;
+        AppState.panStart = { x: e.clientX, y: e.clientY };
+        document.body.style.cursor = "grabbing";
         e.preventDefault();
       } else if (e.target.classList.contains("canvas-element")) {
         AppState.isDragging = true;
@@ -600,7 +1229,11 @@
     },
 
     handleMouseMove: function (e) {
-      if (AppState.isDragging && AppState.selectedElement) {
+      if (AppState.isPanning) {
+        this.panCanvas(e);
+      } else if (AppState.isDrawing) {
+        DrawingManager.continueDrawing(e);
+      } else if (AppState.isDragging && AppState.selectedElement) {
         this.dragElement(e);
       } else if (AppState.isResizing && AppState.selectedElement) {
         this.resizeElement(e);
@@ -610,16 +1243,50 @@
     },
 
     handleMouseUp: function (e) {
+      const wasInteracting =
+        AppState.isDragging ||
+        AppState.isResizing ||
+        AppState.isRotating ||
+        AppState.isPanning ||
+        AppState.isDrawing;
+
       if (AppState.isRotating) {
         document.querySelectorAll(".rotation-handle").forEach((handle) => {
           handle.style.cursor = "grab";
         });
       }
+
+      if (AppState.isPanning) {
+        document.body.style.cursor = "default";
+      }
+
+      if (AppState.isDrawing) {
+        DrawingManager.finishDrawing();
+      }
+
       AppState.isDragging = false;
       AppState.isResizing = false;
       AppState.isRotating = false;
+      AppState.isPanning = false;
       AppState.resizeHandle = null;
       AppState.rotationStartAngle = 0;
+
+      // Save state after interaction ends (except panning and drawing - they handle their own state saving)
+      if (wasInteracting && !AppState.isPanning && !AppState.isDrawing) {
+        HistoryManager.saveState();
+      }
+    },
+
+    panCanvas: function (e) {
+      const deltaX = e.clientX - AppState.panStart.x;
+      const deltaY = e.clientY - AppState.panStart.y;
+
+      AppState.panOffset.x += deltaX / AppState.zoomLevel;
+      AppState.panOffset.y += deltaY / AppState.zoomLevel;
+
+      AppState.panStart = { x: e.clientX, y: e.clientY };
+
+      CanvasManager.applyPanTransform();
     },
 
     dragElement: function (e) {
@@ -738,23 +1405,7 @@
           );
           break;
       }
-      if (AppState.selectedElement.type === "circle") {
-        const avgSize = Math.min(newWidth, newHeight);
-        newWidth = avgSize;
-        newHeight = avgSize;
-        if (AppState.resizeHandle === "sw" || AppState.resizeHandle === "nw") {
-          newX =
-            AppState.selectedElement.x +
-            AppState.selectedElement.width -
-            newWidth;
-        }
-        if (AppState.resizeHandle === "ne" || AppState.resizeHandle === "nw") {
-          newY =
-            AppState.selectedElement.y +
-            AppState.selectedElement.height -
-            newHeight;
-        }
-      }
+
       if (newX + newWidth > AppState.canvas.width) {
         newWidth = AppState.canvas.width - newX;
       }
@@ -786,9 +1437,13 @@
     },
   };
 
+  // Text editing system for text elements
   const TextEditor = {
-
     startTextEdit: function (element, elementDiv) {
+      // Hide original text during editing
+      elementDiv.style.opacity = "0.3";
+      elementDiv.textContent = "";
+
       const input = document.createElement("input");
       input.type = "text";
       input.value = element.textContent;
@@ -802,12 +1457,13 @@
                 font-size: 14px;
                 font-family: inherit;
                 color: ${element.backgroundColor};
-                background: transparent;
+                background: rgba(255, 255, 255, 0.9);
                 border: 2px solid ${element.backgroundColor};
-                border-radius: 0;
+                border-radius: 4px;
                 padding: 4px;
                 z-index: 10000;
                 outline: none;
+                box-sizing: border-box;
             `;
       const canvas = document.getElementById("canvas");
       if (canvas) {
@@ -821,6 +1477,9 @@
           if (e.key === "Enter") {
             this.finishTextEdit(element, elementDiv, input);
           } else if (e.key === "Escape") {
+            // Cancel edit - restore original text
+            elementDiv.style.opacity = "1";
+            elementDiv.textContent = element.textContent;
             input.remove();
           }
         });
@@ -829,7 +1488,11 @@
 
     finishTextEdit: function (element, elementDiv, input) {
       element.textContent = input.value || "Text";
+
+      // Restore original element visibility and update display
+      elementDiv.style.opacity = "1";
       ElementRenderer.updateElementDisplay(element);
+
       if (
         AppState.selectedElement &&
         AppState.selectedElement.id === element.id
@@ -840,8 +1503,8 @@
     },
   };
 
+  // Properties panel management for element customization
   const PropertiesPanel = {
-
     updatePropertiesPanel: function (element) {
       const widthInput = document.getElementById("widthInput");
       const heightInput = document.getElementById("heightInput");
@@ -849,7 +1512,10 @@
       const backgroundColorInput = document.getElementById(
         "backgroundColorInput",
       );
+      const borderColorInput = document.getElementById("borderColorInput");
+      const borderWidthInput = document.getElementById("borderWidthInput");
       const colorHex = document.querySelector(".color-hex");
+      const borderColorHex = document.querySelector(".border-color-hex");
       const textGroup = document.getElementById("textContentGroup");
       const textContentInput = document.getElementById("textContentInput");
 
@@ -858,7 +1524,12 @@
       if (rotationInput) rotationInput.value = element.rotation;
       if (backgroundColorInput)
         backgroundColorInput.value = element.backgroundColor;
+      if (borderColorInput)
+        borderColorInput.value = element.borderColor || "#000000";
+      if (borderWidthInput) borderWidthInput.value = element.borderWidth || 0;
       if (colorHex) colorHex.textContent = element.backgroundColor;
+      if (borderColorHex)
+        borderColorHex.textContent = element.borderColor || "#000000";
 
       if (textGroup) {
         if (element.type === "text") {
@@ -892,15 +1563,10 @@
       if (!AppState.selectedElement) return;
       switch (property) {
         case "width":
-          AppState.selectedElement.width = Math.max(
-            AppState.canvas.minElementSize,
-            parseInt(value) || AppState.canvas.minElementSize,
-          );
-          if (AppState.selectedElement.type === "circle") {
-            AppState.selectedElement.height = AppState.selectedElement.width;
-            const heightInput = document.getElementById("heightInput");
-            if (heightInput) heightInput.value = AppState.selectedElement.width;
-          }
+          const inputWidth = parseInt(value);
+          const newWidth = isNaN(inputWidth) || inputWidth < 0 ? 0 : inputWidth;
+          AppState.selectedElement.width = newWidth;
+
           if (
             AppState.selectedElement.x + AppState.selectedElement.width >
             AppState.canvas.width
@@ -910,15 +1576,11 @@
           }
           break;
         case "height":
-          AppState.selectedElement.height = Math.max(
-            AppState.canvas.minElementSize,
-            parseInt(value) || AppState.canvas.minElementSize,
-          );
-          if (AppState.selectedElement.type === "circle") {
-            AppState.selectedElement.width = AppState.selectedElement.height;
-            const widthInput = document.getElementById("widthInput");
-            if (widthInput) widthInput.value = AppState.selectedElement.height;
-          }
+          const inputHeight = parseInt(value);
+          const newHeight =
+            isNaN(inputHeight) || inputHeight < 0 ? 0 : inputHeight;
+          AppState.selectedElement.height = newHeight;
+
           if (
             AppState.selectedElement.y + AppState.selectedElement.height >
             AppState.canvas.height
@@ -935,17 +1597,32 @@
           const colorHex = document.querySelector(".color-hex");
           if (colorHex) colorHex.textContent = value;
           break;
+        case "borderColor":
+          AppState.selectedElement.borderColor = value;
+          const borderColorHex = document.querySelector(".border-color-hex");
+          if (borderColorHex) borderColorHex.textContent = value;
+          break;
+        case "borderWidth":
+          const inputBorderWidth = parseInt(value);
+          AppState.selectedElement.borderWidth =
+            isNaN(inputBorderWidth) || inputBorderWidth < 0
+              ? 0
+              : inputBorderWidth;
+          break;
         case "textContent":
           AppState.selectedElement.textContent = value;
           break;
       }
       ElementRenderer.updateElementDisplay(AppState.selectedElement);
       this.updatePropertiesPanel(AppState.selectedElement);
+
+      // Save state for undo/redo after property change
+      HistoryManager.saveState();
     },
   };
 
+  // Layer management system for element ordering and navigation
   const LayerManager = {
-
     updateLayersPanel: function () {
       const layersList = document.getElementById("layersList");
       if (!layersList) return;
@@ -962,7 +1639,7 @@
       const sortedElements = [...AppState.elements].sort(
         (a, b) => b.zIndex - a.zIndex,
       );
-      sortedElements.forEach((element) => {
+      sortedElements.forEach((element, index) => {
         const layerItem = document.createElement("div");
         layerItem.className = "layer-item";
         layerItem.id = `layer-${element.id}`;
@@ -982,9 +1659,11 @@
                     ${isSelected ? "background: #58a6ff; color: white;" : ""}
                 `;
         const icon = this.getElementIcon(element.type);
+        const layerNumber = sortedElements.length - index; // Front layer = highest number
         layerItem.innerHTML = `
                     <span class="layer-icon">${icon}</span>
                     <span class="layer-name">${element.type} ${element.id.split("_")[1]}</span>
+                    <span class="layer-number" style="margin-left: auto; font-size: 0.7rem; opacity: 0.7;">L${layerNumber}</span>
                 `;
         layersList.appendChild(layerItem);
       });
@@ -997,7 +1676,9 @@
         circle: "⭕",
         rectangle: "📦",
         triangle: "🔺",
+        star: "⭐",
         line: "📏",
+        path: "✏️",
       };
       return icons[type] || "📦";
     },
@@ -1014,7 +1695,9 @@
           block: "center",
           inline: "nearest",
         });
+        // Add a subtle highlight animation
         layerItem.style.transform = "scale(1.02)";
+        layerItem.style.transition = "transform 0.2s ease";
         setTimeout(() => {
           layerItem.style.transform = "scale(1)";
         }, 200);
@@ -1023,35 +1706,191 @@
 
     moveLayer: function (direction) {
       if (!AppState.selectedElement) return;
-      const visualOrder = [...AppState.elements].sort(
+
+      // Get all elements sorted by z-index (highest to lowest = front to back)
+      const sortedElements = [...AppState.elements].sort(
         (a, b) => b.zIndex - a.zIndex,
       );
-      const currentIndex = visualOrder.findIndex(
+
+      if (sortedElements.length <= 1) return; // Need at least 2 elements
+
+      const currentIndex = sortedElements.findIndex(
         (el) => el.id === AppState.selectedElement.id,
       );
+
       if (currentIndex === -1) return;
+
       let targetIndex;
       if (direction === "up") {
+        // Move up means select previous element in list (towards front)
         targetIndex = currentIndex - 1;
       } else if (direction === "down") {
+        // Move down means select next element in list (towards back)
         targetIndex = currentIndex + 1;
       }
+
+      // Wrap around if at boundaries
       if (targetIndex < 0) {
-        targetIndex = visualOrder.length - 1;
-      } else if (targetIndex >= visualOrder.length) {
-        targetIndex = 0;
+        targetIndex = sortedElements.length - 1; // Go to last element
+      } else if (targetIndex >= sortedElements.length) {
+        targetIndex = 0; // Go to first element
       }
-      const targetElement = visualOrder[targetIndex];
+
+      // Select the target element
+      const targetElement = sortedElements[targetIndex];
       ElementManager.selectElement(targetElement);
+
+      // Update layers panel to reflect new selection
+      this.updateLayersPanel();
+    },
+
+    normalizeZIndices: function () {
+      // Sort elements by current z-index
+      const sortedElements = [...AppState.elements].sort(
+        (a, b) => a.zIndex - b.zIndex,
+      );
+
+      // Reassign sequential z-indices
+      sortedElements.forEach((element, index) => {
+        element.zIndex = index;
+
+        // Update DOM z-index
+        if (element.type === "path") {
+          if (element.pathDivs) {
+            element.pathDivs.forEach((div) => {
+              div.style.zIndex = element.zIndex;
+            });
+          }
+        } else {
+          const elementDiv = document.getElementById(element.id);
+          if (elementDiv) {
+            elementDiv.style.zIndex = element.zIndex;
+          }
+        }
+      });
+    },
+
+    reorderLayer: function (direction) {
+      if (!AppState.selectedElement) return;
+
+      const selectedElement = AppState.selectedElement;
+
+      // Get all elements sorted by z-index (highest to lowest = front to back)
+      const sortedElements = [...AppState.elements].sort(
+        (a, b) => b.zIndex - a.zIndex,
+      );
+      const currentIndex = sortedElements.findIndex(
+        (el) => el.id === selectedElement.id,
+      );
+
+      if (currentIndex === -1) return;
+
+      let targetIndex;
+      if (direction === "up") {
+        // Move up means towards front (lower index in sorted array)
+        targetIndex = currentIndex - 1;
+      } else if (direction === "down") {
+        // Move down means towards back (higher index in sorted array)
+        targetIndex = currentIndex + 1;
+      }
+
+      // Check bounds
+      if (targetIndex < 0 || targetIndex >= sortedElements.length) return;
+
+      // Swap elements in the sorted array
+      [sortedElements[currentIndex], sortedElements[targetIndex]] = [
+        sortedElements[targetIndex],
+        sortedElements[currentIndex],
+      ];
+
+      // Reassign z-indices based on new order (highest z-index = front)
+      sortedElements.forEach((element, index) => {
+        element.zIndex = sortedElements.length - index - 1;
+
+        // Update DOM z-index
+        if (element.type === "path") {
+          if (element.pathDivs) {
+            element.pathDivs.forEach((div) => {
+              div.style.zIndex = element.zIndex;
+            });
+          }
+        } else {
+          const elementDiv = document.getElementById(element.id);
+          if (elementDiv) {
+            elementDiv.style.zIndex = element.zIndex;
+          }
+        }
+      });
+
+      // Update layers panel to reflect new order
+      this.updateLayersPanel();
+
+      // Save state for undo/redo
+      HistoryManager.saveState();
+    },
+
+    bringToFront: function () {
+      if (!AppState.selectedElement) return;
+
+      const selectedElement = AppState.selectedElement;
+      const maxZIndex = Math.max(...AppState.elements.map((el) => el.zIndex));
+
+      if (selectedElement.zIndex === maxZIndex) return; // Already at front
+
+      selectedElement.zIndex = ++AppState.zIndexCounter;
+
+      // Update DOM z-index
+      if (selectedElement.type === "path") {
+        if (selectedElement.pathDivs) {
+          selectedElement.pathDivs.forEach((div) => {
+            div.style.zIndex = selectedElement.zIndex;
+          });
+        }
+      } else {
+        const elementDiv = document.getElementById(selectedElement.id);
+        if (elementDiv) {
+          elementDiv.style.zIndex = selectedElement.zIndex;
+        }
+      }
+
+      this.updateLayersPanel();
+      HistoryManager.saveState();
+    },
+
+    sendToBack: function () {
+      if (!AppState.selectedElement) return;
+
+      const selectedElement = AppState.selectedElement;
+      const minZIndex = Math.min(...AppState.elements.map((el) => el.zIndex));
+
+      if (selectedElement.zIndex === minZIndex) return; // Already at back
+
+      selectedElement.zIndex = minZIndex - 1;
+
+      // Update DOM z-index
+      if (selectedElement.type === "path") {
+        if (selectedElement.pathDivs) {
+          selectedElement.pathDivs.forEach((div) => {
+            div.style.zIndex = selectedElement.zIndex;
+          });
+        }
+      } else {
+        const elementDiv = document.getElementById(selectedElement.id);
+        if (elementDiv) {
+          elementDiv.style.zIndex = selectedElement.zIndex;
+        }
+      }
+
+      this.updateLayersPanel();
+      HistoryManager.saveState();
     },
   };
 
+  // Tool management system for switching between different tools
   const ToolManager = {
-
     selectTool: function (tool) {
-
       if (AppState.currentTool === tool) return;
-      
+
       AppState.currentTool = tool;
 
       const currentActive = document.querySelector(".tool-btn.active");
@@ -1071,13 +1910,28 @@
 
       const canvas = document.getElementById("canvas");
       if (canvas) {
-        canvas.style.cursor = tool === "select" ? "default" : "crosshair";
+        if (tool === "select") {
+          canvas.style.cursor = "default";
+        } else if (tool === "pan") {
+          canvas.style.cursor = "grab";
+        } else if (tool === "eraser") {
+          canvas.style.cursor = "crosshair";
+          // Add eraser visual feedback
+          canvas.classList.add("eraser-active");
+        } else {
+          canvas.style.cursor = "crosshair";
+        }
+
+        // Remove eraser class if not eraser tool
+        if (tool !== "eraser") {
+          canvas.classList.remove("eraser-active");
+        }
       }
     },
   };
 
+  // Zoom management for canvas scaling
   const ZoomManager = {
-
     handleZoom: function (isZoomIn) {
       if (isZoomIn) {
         AppState.zoomLevel = Math.min(
@@ -1125,12 +1979,123 @@
     },
   };
 
+  // Keyboard shortcuts and mouse wheel handling
   const KeyboardHandler = {
     handleKeyDown: function (e) {
+      // Skip keyboard shortcuts when user is typing in input fields
+      if (
+        e.target.tagName === "INPUT" ||
+        e.target.tagName === "TEXTAREA" ||
+        e.target.isContentEditable
+      ) {
+        return; // Allow normal typing in input fields
+      }
+
+      // Handle global shortcuts first (undo/redo work without selection)
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key.toLowerCase()) {
+          case "z":
+            e.preventDefault();
+            if (e.shiftKey) {
+              HistoryManager.redo(); // Ctrl+Shift+Z for redo
+            } else {
+              HistoryManager.undo(); // Ctrl+Z for undo
+            }
+            return;
+          case "y":
+            e.preventDefault();
+            HistoryManager.redo(); // Ctrl+Y for redo
+            return;
+        }
+      }
+
+      // Tool shortcuts (work globally)
+      if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        switch (e.key.toLowerCase()) {
+          case "v":
+            e.preventDefault();
+            ToolManager.selectTool("select");
+            return;
+          case "h":
+            e.preventDefault();
+            ToolManager.selectTool("pan");
+            return;
+          case "p":
+            e.preventDefault();
+            ToolManager.selectTool("pen");
+            return;
+          case "e":
+            e.preventDefault();
+            ToolManager.selectTool("eraser");
+            return;
+          case "r":
+            e.preventDefault();
+            ToolManager.selectTool("rectangle");
+            return;
+          case "c":
+            e.preventDefault();
+            ToolManager.selectTool("circle");
+            return;
+          case "t":
+            e.preventDefault();
+            ToolManager.selectTool("triangle");
+            return;
+          case "s":
+            e.preventDefault();
+            ToolManager.selectTool("star");
+            return;
+          case "l":
+            e.preventDefault();
+            ToolManager.selectTool("line");
+            return;
+          case "x":
+            e.preventDefault();
+            ToolManager.selectTool("text");
+            return;
+        }
+      }
+
+      // Element-specific shortcuts (require selection)
       if (!AppState.selectedElement) return;
+
+      // Layer navigation shortcuts (Ctrl + Arrow keys)
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case "ArrowUp":
+            e.preventDefault();
+            LayerManager.moveLayer("up"); // Navigate to previous layer
+            return;
+          case "ArrowDown":
+            e.preventDefault();
+            LayerManager.moveLayer("down"); // Navigate to next layer
+            return;
+        }
+      }
+
+      // Layer reordering shortcuts (Shift + Arrow keys)
+      if (e.shiftKey) {
+        switch (e.key) {
+          case "ArrowUp":
+            e.preventDefault();
+            LayerManager.reorderLayer("up"); // Move layer towards front
+            return;
+          case "ArrowDown":
+            e.preventDefault();
+            LayerManager.reorderLayer("down"); // Move layer towards back
+            return;
+          case "]":
+            e.preventDefault();
+            LayerManager.bringToFront();
+            return;
+          case "[":
+            e.preventDefault();
+            LayerManager.sendToBack();
+            return;
+        }
+      }
+
       switch (e.key) {
         case "Delete":
-        case "Backspace":
           ElementManager.deleteElement();
           break;
         case "ArrowUp":
@@ -1148,16 +2113,6 @@
         case "ArrowRight":
           e.preventDefault();
           ElementManager.moveElement(5, 0);
-          break;
-        case "r":
-        case "R":
-          e.preventDefault();
-          ElementManager.rotateElement(15);
-          break;
-        case "e":
-        case "E":
-          e.preventDefault();
-          ElementManager.rotateElement(-15);
           break;
         case "[":
           e.preventDefault();
@@ -1193,8 +2148,8 @@
     },
   };
 
+  // UI management for updating interface elements
   const UIManager = {
-
     updateElementCount: function () {
       const elementCount = document.getElementById("elementCount");
       if (elementCount) elementCount.textContent = AppState.elements.length;
@@ -1216,8 +2171,8 @@
     },
   };
 
+  // Local storage management for saving/loading projects
   const StorageManager = {
-
     saveToStorage: function () {
       if (AppState.pages[AppState.currentPageIndex]) {
         AppState.pages[AppState.currentPageIndex].elements = [
@@ -1270,8 +2225,8 @@
     },
   };
 
+  // Export functionality for JSON and HTML formats
   const ExportManager = {
-
     exportJSON: function () {
       const data = {
         elements: AppState.elements,
@@ -1314,6 +2269,11 @@
                 `;
         if (element.type === "circle") {
           style += "border-radius: 50%;";
+        } else if (element.type === "triangle") {
+          style += "clip-path: polygon(50% 0%, 0% 100%, 100% 100%);";
+        } else if (element.type === "star") {
+          style +=
+            "clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);";
         } else if (element.type === "text") {
           style += `color: ${element.backgroundColor}; background: transparent; border: 1px solid ${element.backgroundColor};`;
         }
@@ -1337,8 +2297,8 @@
     },
   };
 
+  // Main event handler system for all user interactions
   const EventHandler = {
-
     init: function () {
       document.addEventListener("click", this.handleClick.bind(this));
       document.addEventListener("mousedown", this.handleMouseDown.bind(this));
@@ -1351,7 +2311,6 @@
     },
 
     handleClick: function (e) {
-
       if (e.target.closest(".tool-btn")) {
         e.preventDefault();
         const toolBtn = e.target.closest(".tool-btn");
@@ -1361,9 +2320,37 @@
         }
         return;
       }
-      
-      if (e.target.classList.contains("zoom-btn")) {
-        const isZoomIn = e.target.textContent === "+";
+
+      // Handle undo/redo buttons
+      if (e.target.id === "undoBtn" || e.target.closest("#undoBtn")) {
+        e.preventDefault();
+        HistoryManager.undo();
+        return;
+      }
+
+      if (e.target.id === "redoBtn" || e.target.closest("#redoBtn")) {
+        e.preventDefault();
+        HistoryManager.redo();
+        return;
+      }
+
+      // Handle delete button
+      if (e.target.id === "deleteBtn" || e.target.closest("#deleteBtn")) {
+        e.preventDefault();
+        if (AppState.selectedElement) {
+          ElementManager.deleteElement();
+        }
+        return;
+      }
+
+      if (
+        e.target.classList.contains("zoom-btn") ||
+        e.target.closest(".zoom-btn")
+      ) {
+        const zoomBtn = e.target.classList.contains("zoom-btn")
+          ? e.target
+          : e.target.closest(".zoom-btn");
+        const isZoomIn = zoomBtn.querySelector(".ri-add-line") !== null;
         ZoomManager.handleZoom(isZoomIn);
       } else if (e.target.classList.contains("layer-btn")) {
         const action = e.target.title.includes("Up") ? "up" : "down";
@@ -1377,7 +2364,12 @@
         const pageContent = e.target.closest(".page-content");
         const pageIndex = parseInt(pageContent.dataset.pageIndex);
         if (!isNaN(pageIndex)) {
-          PageManager.switchToPage(pageIndex);
+          // Check if clicked on page name span for editing
+          if (e.target.classList.contains("page-name")) {
+            PageManager.editPageName(pageIndex);
+          } else {
+            PageManager.switchToPage(pageIndex);
+          }
         }
       } else if (e.target.id === "exportJSONBtn") {
         ExportManager.exportJSON();
@@ -1444,14 +2436,18 @@
         PropertiesPanel.updateProperty("rotation", e.target.value);
       } else if (e.target.id === "backgroundColorInput") {
         PropertiesPanel.updateProperty("backgroundColor", e.target.value);
+      } else if (e.target.id === "borderColorInput") {
+        PropertiesPanel.updateProperty("borderColor", e.target.value);
+      } else if (e.target.id === "borderWidthInput") {
+        PropertiesPanel.updateProperty("borderWidth", e.target.value);
       } else if (e.target.id === "textContentInput") {
         PropertiesPanel.updateProperty("textContent", e.target.value);
       }
     },
   };
 
+  // Main application initialization
   const App = {
-    
     init: function () {
       EventHandler.init();
       StorageManager.loadFromStorage();
@@ -1459,6 +2455,9 @@
       PageManager.updatePagesPanel();
       ZoomManager.updateZoomDisplay();
       ZoomManager.applyZoom();
+
+      // Initialize history manager
+      HistoryManager.initialize();
     },
   };
 
